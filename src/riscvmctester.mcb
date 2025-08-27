@@ -1,0 +1,25 @@
+function onload minecraft:onload {
+    scoreboard objectives add riscvmctest dummy
+}
+
+function reset {
+    scoreboard players set #count riscvmctest 0
+}
+
+function tick {
+    execute if score #running riscvmc matches 1 run {
+        function riscvmc:step
+        scoreboard players add #count riscvmctest 1
+        execute store result storage riscvmctest:tmp count int 1 run scoreboard players get #count riscvmctest
+        block { with storage riscvmctest:tmp
+            $data modify storage riscvmctest:tmp target_pc set from storage riscvmc:pc_log pc[$(count)]
+            data modify storage riscvmctest:tmp current_pc set from storage riscvmc:debug pc
+            # block { with storage riscvmctest:tmp
+            #     $say $(count) - cur: $(current_pc) tar: $(target_pc)
+            #     $execute unless data storage riscvmctest:tmp {current_pc: "$(target_pc)"} run {
+            #         function riscvmc:stop_running
+            #     }
+            # }
+        }
+    }
+}

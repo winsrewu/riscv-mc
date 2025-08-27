@@ -1,0 +1,6 @@
+.mcb
+data
+*/__pycache__
+python/app.mcfunction
+python/res.txt
+python/pc.mcfunction

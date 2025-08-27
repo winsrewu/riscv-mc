@@ -1,0 +1,106 @@
+import ./num_to_binary_array.js
+
+# tmp example:
+# addr: [...] (32 bit length array)
+
+# result:
+# data: [0b,1b,1b,0b,1b,1b,1b,1b] (8 bit length array)
+function get {
+    data modify storage bitops:tmp a_digits set from storage mem:tmp addr
+    data modify storage mem:tmp data set value <% from_num(0, 8) %>
+    function bitops:to_str
+    block { with storage bitops:tmp
+        $data modify storage mem:tmp data set from storage riscvmc:memory m.$(str)
+    }
+}
+
+
+# tmp example:
+# addr: [...] (32 bit length array)
+# data: [0b,1b,1b,0b,1b,1b,1b,1b] (8 bit length array)
+
+# result:
+# -
+function put {
+    data modify storage bitops:tmp a_digits set from storage mem:tmp addr
+    function bitops:to_str
+    block { with storage bitops:tmp
+        $data modify storage riscvmc:memory m.$(str) set from storage mem:tmp data
+    }
+}
+
+# tmp example:
+# id: [...] (5 bit length array)
+
+# result:
+# data: [...] (32 bit length array)
+function get_reg {
+    data modify storage bitops:tmp c_digits set from storage mem:tmp id
+    data modify storage mem:tmp data set value <% from_num(0, 32) %>
+    function bitops:to_str_not_32
+    block { with storage bitops:tmp
+        $data modify storage mem:tmp data set from storage riscvmc:memory reg.$(str)
+    }
+}
+
+# tmp example:
+# id: [...] (5 bit length array)
+# data: [...] (32 bit length array)
+
+# result:
+# -
+function put_reg {
+    data modify storage bitops:tmp c_digits set from storage mem:tmp id
+    function bitops:to_str_not_32
+    execute unless data storage bitops:tmp {str: "00000"} run { with storage bitops:tmp
+        $data modify storage riscvmc:memory reg.$(str) set from storage mem:tmp data
+    }
+}
+
+function remove_memory {
+    data remove storage riscvmc:memory m
+}
+
+function remove_reg {
+    data remove storage riscvmc:memory reg
+}
+
+function test_load {
+    data modify storage riscvmc:memory m.10000000000000000000000000000000 set value [0b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000001 set value [0b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000010 set value [0b,0b,0b,1b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000011 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000100 set value [1b,0b,0b,1b,0b,1b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000101 set value [0b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000110 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000000111 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001000 set value [1b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001001 set value [1b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001010 set value [0b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001011 set value [0b,0b,0b,0b,0b,0b,1b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001100 set value [0b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001101 set value [0b,0b,0b,0b,0b,1b,1b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001110 set value [0b,1b,1b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000001111 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010000 set value [1b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010001 set value [0b,0b,0b,0b,1b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010010 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010011 set value [0b,0b,0b,0b,0b,1b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010100 set value [0b,1b,1b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010101 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010110 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000010111 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011000 set value [0b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011001 set value [0b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011010 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011011 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011100 set value [1b,0b,0b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011101 set value [0b,0b,0b,0b,1b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011110 set value [1b,1b,0b,1b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000011111 set value [0b,0b,0b,0b,0b,1b,0b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000100000 set value [0b,1b,1b,1b,0b,0b,1b,1b]
+    data modify storage riscvmc:memory m.10000000000000000000000000100001 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000100010 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    data modify storage riscvmc:memory m.10000000000000000000000000100011 set value [0b,0b,0b,0b,0b,0b,0b,0b]
+    say loaded!
+}

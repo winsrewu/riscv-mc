@@ -1,0 +1,581 @@
+import ./num_to_binary_array.js
+
+# store example:
+# [true, true, false, ..., false, false, false] (32-bit)
+# lower bits at right
+
+# !!!
+# please note that all the binary variables here are 32 bit length.
+# unless it is marked as "NOT 32-bit"
+# !!!
+
+function onload minecraft:onload {
+    scoreboard objectives add bitops dummy
+
+    REPEAT (0, 30) as i {
+        scoreboard players set #<%2 ** i%> bitops <%2 ** i%>
+    }
+    scoreboard players set #n1 bitops -1
+}
+
+
+
+# tmp example:
+# c_digits: [...] (... any length) NOT 32-bit
+
+# result:
+# length: (array length)
+function get_array_length {
+    block { with storage bitops:tmp
+        data modify storage bitops:tmp length set value 0
+
+        block { with storage bitops:tmp
+            $execute if data storage bitops:tmp c_digits[$(length)] run { with storage bitops:tmp
+                execute store result score #l bitops run data get storage bitops:tmp length
+                scoreboard players add #l bitops 1
+                execute store result storage bitops:tmp length int 1 run scoreboard players get #l bitops
+                function ^1 with storage bitops:tmp
+            }
+        }
+    }
+}
+
+
+# tmp example:
+# c_digits: [...] (... less than 32 bits) NOT 32-bit
+
+# result:
+# digits: [...] (... 32 bits)
+# !!! prepend zeros to the left until the length is 32 !!!
+function left_pad_32 {
+    data modify storage bitops:tmp digits set from storage bitops:tmp c_digits
+    function *get_array_length
+    block {
+        execute if score #l bitops matches ..31 run {
+            data modify storage bitops:tmp digits prepend value false
+            scoreboard players operation #l bitops += #1 bitops
+            function ^1
+        }
+    }
+}
+
+
+# tmp example:
+# c_digits: [...] (... less than 32 bits) NOT 32-bit
+
+# result:
+# digits: [...] (... 32 bits)
+# !!! prepend c_digits[0] to the left until the length is 32 !!!
+function sign_extend_32 {
+    data modify storage bitops:tmp digits set from storage bitops:tmp c_digits
+    function *get_array_length
+    block {
+        execute if score #l bitops matches ..31 run {
+            data modify storage bitops:tmp digits prepend from storage bitops:tmp c_digits[0]
+            scoreboard players operation #l bitops += #1 bitops
+            function ^1
+        }
+    }
+}
+
+
+# tmp example:
+# c_digits: [...] (... any length) NOT 32-bit
+# d_digits: [...] (... any length) NOT 32-bit
+
+# result:
+# #flag 0 (a != b), 1 (a == b)
+# !!! length of a_digits and b_digits must be the same, or the result is always 0 !!!
+function equal_not_32 {
+    data modify storage bitops:tmp cmp_not_32.c set from storage bitops:tmp c_digits
+    data modify storage bitops:tmp cmp_not_32.d set from storage bitops:tmp d_digits
+    function *get_array_length
+    scoreboard players operation #la bitops = #l bitops
+
+    data modify storage bitops:tmp c_digits set from storage bitops:tmp cmp_not_32.d
+    function *get_array_length
+    scoreboard players operation #lb bitops = #l bitops
+
+    scoreboard players set #flag bitops 1
+
+    execute if score #la bitops = #lb bitops run {
+        scoreboard players set #i bitops 0
+        block {
+            execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+            execute if score #i bitops < #la bitops run { with storage bitops:tmp
+                $execute store result score #a_val bitops run data get storage bitops:tmp cmp_not_32.c[$(i)]
+                $execute store result score #b_val bitops run data get storage bitops:tmp cmp_not_32.d[$(i)]
+
+                execute unless score #a_val bitops = #b_val bitops run {
+                    scoreboard players set #flag bitops 0
+                }
+
+                scoreboard players operation #i bitops += #1 bitops
+                function ^1
+            }
+        }
+    } else run {
+        scoreboard players set #flag bitops 0
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b0110)
+
+# result:
+# digits: [...] (... 0b1001)
+function bitwise_not {
+    data modify storage bitops:tmp digits set value []
+    
+    REPEAT (0, 31) as i {
+        execute store result score #temp bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute if score #temp bitops matches 0 run {
+            data modify storage bitops:tmp digits append value true
+        } else run {
+            data modify storage bitops:tmp digits append value false
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b0010)
+# b_digits: [...] (... 0b0011)
+
+# result:
+# digits: [...] (... 0b0101)
+function add {
+    data modify storage bitops:tmp digits set value []
+    scoreboard players set #carry bitops 0
+
+    REPEAT (31, 0) as i {
+        scoreboard players set #temp bitops 0
+        execute store result score #b1 bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute store result score #b2 bitops run data get storage bitops:tmp b_digits[<%i%>]
+
+        execute if score #b1 bitops matches 1 run scoreboard players operation #temp bitops += #1 bitops
+        execute if score #b2 bitops matches 1 run scoreboard players operation #temp bitops += #1 bitops
+        execute if score #carry bitops matches 1 run scoreboard players operation #temp bitops += #1 bitops
+
+        scoreboard players set #carry bitops 0
+
+        execute if score #temp bitops matches 0 run {
+            data modify storage bitops:tmp digits prepend value false
+        } else execute if score #temp bitops matches 1 run {
+            data modify storage bitops:tmp digits prepend value true
+        } else execute if score #temp bitops matches 2 run {
+            data modify storage bitops:tmp digits prepend value false
+            scoreboard players set #carry bitops 1
+        } else run {
+            data modify storage bitops:tmp digits prepend value true
+            scoreboard players set #carry bitops 1
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b0010)
+# b_digits: [...] (... 0b0011)
+
+# result:
+# digits: [...] (... 0b0010)
+function subtract {
+    data modify storage bitops:tmp a_temp set from storage bitops:tmp a_digits
+    data modify storage bitops:tmp b_temp set from storage bitops:tmp b_digits
+
+    data modify storage bitops:tmp a_digits set from storage bitops:tmp b_temp
+
+    function *bitwise_not
+    data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+    data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+    function *add
+
+    data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+    data modify storage bitops:tmp b_digits set from storage bitops:tmp a_temp
+    function *add
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b0010)
+# b_digits: [...] (... 0b0011)
+
+# result:
+# #flag 0 (false)
+function equal {
+    scoreboard players set #flag bitops 1
+
+    REPEAT (0, 31) as i {
+        execute store result score #b1 bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute store result score #b2 bitops run data get storage bitops:tmp b_digits[<%i%>]
+        execute if score #b1 bitops matches 1 run {
+            execute if score #b2 bitops matches 0 run {
+                scoreboard players set #flag bitops 0
+            }
+        } else execute if score #b1 bitops matches 0 run {
+            execute if score #b2 bitops matches 1 run {
+                scoreboard players set #flag bitops 0
+            }
+        }
+    }
+}
+
+
+# tmp example:
+# int_num: 132054
+
+# result:
+# digits: [...] (0b0000 0000 0000 0010 0000 0011 1101 0110)
+# notice: output is signed
+function from_int {
+    block { with storage bitops:tmp
+        $scoreboard players set #int bitops $(int_num)
+    }
+
+    scoreboard players set #n_flag bitops 0
+
+    execute if score #int bitops matches ..-1 run {
+        scoreboard players set #n_flag bitops 1
+        scoreboard players operation #int bitops *= #n1 bitops
+    }
+
+    data modify storage bitops:tmp digits set value []
+
+    REPEAT (0, 30) as i {
+        scoreboard players operation #temp bitops = #int bitops
+        scoreboard players operation #temp bitops %= #2 bitops
+        execute if score #temp bitops matches 0 run {
+            data modify storage bitops:tmp digits prepend value false
+        } else run {
+            data modify storage bitops:tmp digits prepend value true
+        }
+        scoreboard players operation #int bitops /= #2 bitops
+    }
+
+    data modify storage bitops:tmp digits prepend value false
+    
+    execute if score #n_flag bitops matches 1 run {
+        data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+        function *bitwise_not
+        data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+        data modify storage bitops:tmp b_digits set from storage bitops:tmp b1
+        function *add
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 12)
+# b_digits: [...] (... 34)
+
+# result:
+# #cmp -1 (a < b)
+# #cmp 0 (a == b)
+# #cmp 1 (a > b)
+# notice: numbers are treated as unsigned integers
+function cmpu {
+    scoreboard players set #i bitops 0
+    scoreboard players set #cmp bitops 0
+    scoreboard players set #exit_flag bitops 0
+
+    block {
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+        execute if score #i bitops matches ..31 run { with storage bitops:tmp
+            $execute store result score #b1 bitops run data get storage bitops:tmp a_digits[$(i)]
+            $execute store result score #b2 bitops run data get storage bitops:tmp b_digits[$(i)]
+
+            execute if score #b1 bitops matches 1 run {
+                execute if score #b2 bitops matches 0 run {
+                    scoreboard players set #cmp bitops 1
+                    scoreboard players set #exit_flag bitops 1
+                }
+            } else run {
+                execute if score #b2 bitops matches 1 run {
+                    scoreboard players set #cmp bitops -1
+                    scoreboard players set #exit_flag bitops 1
+                }
+            }
+
+            scoreboard players operation #i bitops += #1 bitops
+            execute if score #exit_flag bitops matches 0 run function ^1
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 12)
+# b_digits: [...] (... 34)
+
+# result:
+# #cmp -1 (a < b)
+# #cmp 0 (a == b)
+# #cmp 1 (a > b)
+# notice: numbers are treated as signed integers
+function cmps {
+    execute store result score #b1 bitops run data get storage bitops:tmp a_digits[0]
+    execute store result score #b2 bitops run data get storage bitops:tmp b_digits[0]
+
+    execute if score #b1 bitops matches 1 run {
+        execute if score #b2 bitops matches 0 run {
+            scoreboard players set #cmp bitops -1
+        } else run {
+            # all negative
+            function *cmpu
+        }
+    } else run {
+        execute if score #b2 bitops matches 1 run {
+            scoreboard players set #cmp bitops 1
+        } else run {
+            # all positive
+            function *cmpu
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 12)
+# shift_bits: 2
+
+# result:
+# digits: [...] (... 48)
+function shift_left {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+    execute store result score #shift_bits bitops run data get storage bitops:tmp shift_bits
+
+    REPEAT (0, 31) as i {
+        scoreboard players set #i bitops <%i%>
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+        scoreboard players operation #i bitops -= #shift_bits bitops
+        execute store result storage bitops:tmp j int 1 run scoreboard players get #i bitops
+
+        execute if score #i bitops matches 0.. run { with storage bitops:tmp
+            $data modify storage bitops:tmp digits[$(j)] set from storage bitops:tmp a_digits[$(i)]
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 12)
+# shift_bits: 2
+
+# result:
+# digits: [...] (... 3)
+function logical_shift_right {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+    execute store result score #shift_bits bitops run data get storage bitops:tmp shift_bits
+
+    REPEAT (0, 31) as i {
+        scoreboard players set #i bitops <%i%>
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+        scoreboard players operation #i bitops += #shift_bits bitops
+        execute store result storage bitops:tmp j int 1 run scoreboard players get #i bitops
+
+        execute if score #i bitops matches ..31 run { with storage bitops:tmp
+            $data modify storage bitops:tmp digits[$(j)] set from storage bitops:tmp a_digits[$(i)]
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 12)
+# shift_bits: 2
+
+# result:
+# digits: [...] (... 3)
+function arithmetic_shift_right {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+    execute store result score #shift_bits bitops run data get storage bitops:tmp shift_bits
+
+    REPEAT (0, 31) as i {
+        scoreboard players set #i bitops <%i%>
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+        scoreboard players operation #i bitops += #shift_bits bitops
+        execute store result storage bitops:tmp j int 1 run scoreboard players get #i bitops
+
+        execute if score #i bitops matches ..31 run { with storage bitops:tmp
+            $data modify storage bitops:tmp digits[$(j)] set from storage bitops:tmp a_digits[$(i)]
+        }
+
+        scoreboard players operation #i bitops -= #32 bitops
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+
+        execute if score #i bitops matches 0.. run { with storage bitops:tmp
+            $data modify storage bitops:tmp digits[$(i)] set from storage bitops:tmp a_digits[0]
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1011)
+# b_digits: [...] (... 0b0110)
+
+# result:
+# digits: [...] (... 0b0010)
+function and {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+
+    REPEAT (0, 31) as i {
+        execute store result score #b1 bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute store result score #b2 bitops run data get storage bitops:tmp b_digits[<%i%>]
+
+        execute if score #b1 bitops matches 1 run execute if score #b2 bitops matches 1 run {
+            data modify storage bitops:tmp digits[<%i%>] set value true
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1011)
+# b_digits: [...] (... 0b0110)
+
+# result:
+# digits: [...] (... 0b1111)
+function or {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+
+    REPEAT (0, 31) as i {
+        execute store result score #b1 bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute store result score #b2 bitops run data get storage bitops:tmp b_digits[<%i%>]
+
+        execute if score #b1 bitops matches 1 run {
+            data modify storage bitops:tmp digits[<%i%>] set value true
+        }
+        execute if score #b2 bitops matches 1 run {
+            data modify storage bitops:tmp digits[<%i%>] set value true
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1011)
+# b_digits: [...] (... 0b0110)
+
+# result:
+# digits: [...] (... 0b1101)
+function xor {
+    data modify storage bitops:tmp digits set value <% from_num(0, 32) %>
+
+    REPEAT (0, 31) as i {
+        execute store result score #b1 bitops run data get storage bitops:tmp a_digits[<%i%>]
+        execute store result score #b2 bitops run data get storage bitops:tmp b_digits[<%i%>]
+
+        execute if score #b1 bitops matches 1 run execute if score #b2 bitops matches 0 run {
+            data modify storage bitops:tmp digits[<%i%>] set value true
+        }
+        execute if score #b1 bitops matches 0 run execute if score #b2 bitops matches 1 run {
+            data modify storage bitops:tmp digits[<%i%>] set value true
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1011)
+
+# result:
+# str: "....001011"
+# notice: output is unsigned and always 32 bits
+function to_str {
+    data modify storage bitops:tmp str set value ""
+
+    REPEAT (0, 31) as i {
+        data modify storage bitops:tmp i set from storage bitops:tmp a_digits[<%i%>]
+        execute if data storage bitops:tmp {i:true} run { with storage bitops:tmp
+            $data modify storage bitops:tmp str set value "$(str)1"
+        } else run { with storage bitops:tmp
+            $data modify storage bitops:tmp str set value "$(str)0"
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1011)
+
+# result:
+# str: "....B"
+# notice: output is unsigned and always 8 chars
+function to_hex_str {
+    data modify storage bitops:tmp str set value ""
+
+    REPEAT (0, 7) as i {
+        data modify storage bitops:tmp i1 set from storage bitops:tmp a_digits[<% i * 4 %>]
+        data modify storage bitops:tmp i2 set from storage bitops:tmp a_digits[<% i * 4 + 1 %>]
+        data modify storage bitops:tmp i3 set from storage bitops:tmp a_digits[<% i * 4 + 2 %>]
+        data modify storage bitops:tmp i4 set from storage bitops:tmp a_digits[<% i * 4 + 3 %>]
+        REPEAT (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']) as i {
+            execute if data storage bitops:tmp {i1: <% from_num_to_array(Number("0x" + i), 4)[0] %>b, i2: <% from_num_to_array(Number("0x" + i), 4)[1] %>b, i3: <% from_num_to_array(Number("0x" + i), 4)[2] %>b, i4: <% from_num_to_array(Number("0x" + i), 4)[3] %>b} run { with storage bitops:tmp
+                $data modify storage bitops:tmp str set value "$(str)<%i%>"
+            }
+        }
+    }
+}
+
+
+
+# tmp example:
+# c_digits: [...] (any length) NOT 32-bit
+
+# result:
+# str: "...."
+# notice: output is unsigned and length of c_digits
+function to_str_not_32 {
+    function *get_array_length
+    scoreboard players operation #i bitops = #l bitops
+    scoreboard players operation #i bitops -= #1 bitops
+    data modify storage bitops:tmp str set value ""
+
+    block { with storage bitops:tmp
+        execute store result storage bitops:tmp i int 1 run scoreboard players get #i bitops
+        execute if score #i bitops matches 0.. run { with storage bitops:tmp
+            $data modify storage bitops:tmp digit set from storage bitops:tmp c_digits[$(i)]
+            block { with storage bitops:tmp
+                $data modify storage bitops:tmp str set value "$(digit)$(str)"
+            }
+            scoreboard players operation #i bitops -= #1 bitops
+            function ^1
+        }
+    }
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1001011)
+
+# result:
+# num: 11 (extract the lowest 5 bits and turn them into an unsigned integer)
+function extract_lowest_5_bits {
+    scoreboard players set #num bitops 0
+    REPEAT (0, 4) as i {
+        execute store result score #b<%i%> bitops run data get storage bitops:tmp a_digits[<%31 - i%>]
+        execute if score #b<%i%> bitops matches 1 run scoreboard players operation #num bitops += #<% 2 ** i %> bitops
+    }
+    execute store result storage bitops:tmp num int 1 run scoreboard players get #num bitops
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1001011)
+
+# result:
+# num: 11 (unsigned integer, store as signed long)
+# !! please notice the 30 and 31 bit are ignored due to scoreboard limit !!
+function to_num {
+    scoreboard players set #num bitops 0
+
+    REPEAT (0, 29) as i {
+        execute store result score #b<%i%> bitops run data get storage bitops:tmp a_digits[<%31 - i%>]
+        execute if score #b<%i%> bitops matches 1 run scoreboard players operation #num bitops += #<% 2 ** i %> bitops
+    }
+
+    execute store result storage bitops:tmp num long 1 run scoreboard players get #num bitops
+}
