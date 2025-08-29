@@ -1,3 +1,5 @@
+import ./num_to_binary_array.js
+
 function onload minecraft:onload {
     scoreboard objectives add riscvmctest dummy
 }
@@ -11,15 +13,33 @@ function tick {
         function riscvmc:step
         scoreboard players add #count riscvmctest 1
         execute store result storage riscvmctest:tmp count int 1 run scoreboard players get #count riscvmctest
+        
         block { with storage riscvmctest:tmp
             $data modify storage riscvmctest:tmp target_pc set from storage riscvmc:pc_log pc[$(count)]
             data modify storage riscvmctest:tmp current_pc set from storage riscvmc:debug pc
-            # block { with storage riscvmctest:tmp
-            #     $say $(count) - cur: $(current_pc) tar: $(target_pc)
-            #     $execute unless data storage riscvmctest:tmp {current_pc: "$(target_pc)"} run {
-            #         function riscvmc:stop_running
-            #     }
-            # }
+            $data modify storage riscvmctest:tmp target_reg set from storage riscvmc:pc_log regs[$(count)]
+            data modify storage riscvmctest:tmp current_reg set from storage riscvmc:debug reg
+
+            block { with storage riscvmctest:tmp
+                $say $(count) - cur: $(current_pc) tar: $(target_pc)
+                $execute unless data storage riscvmctest:tmp {current_pc: "$(target_pc)"} run {
+                    function riscvmc:stop_running
+                }
+                $execute unless data storage riscvmctest:tmp {current_reg: $(target_reg)} run { with storage riscvmctest:tmp
+                    function riscvmc:stop_running
+
+                    $data modify storage riscvmctest:tmp target_reg_dict set value $(target_reg)
+
+                    REPEAT (0, 31) as i {
+                        data modify storage riscvmctest:tmp target_reg_item set from storage riscvmctest:tmp target_reg_dict.<% from_num_to_binary_str(i, 5) %>
+                        block { with storage riscvmctest:tmp
+                            $execute unless data storage riscvmctest:tmp {current_reg: {<% from_num_to_binary_str(i, 5) %>: "$(target_reg_item)"}} run {
+                                say difference in register <% i %> (<% from_num_to_binary_str(i, 5) %>)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

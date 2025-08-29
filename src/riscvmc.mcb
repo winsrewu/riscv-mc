@@ -3,6 +3,8 @@ import ./num_to_binary_array.js
 function onload minecraft:onload {
     scoreboard objectives add riscvmc dummy
     scoreboard objectives add mcb.interal dummy
+
+    scoreboard players set #n1 riscvmc -1
 }
 
 # mem structure:
@@ -673,7 +675,7 @@ function execute_inst {
             data modify storage bitops:tmp a_digits set from storage riscvmc:memory reg.10001
             function bitops:to_str
 
-            REPEAT ({SYS_write: 64, SYS_exit: 93}) as key, value {
+            REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93}) as key, value {
                 execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
                     data modify storage bitops:tmp ecall.type set value "<% key %>"
                 }
@@ -715,7 +717,53 @@ function execute_inst {
 
                     data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp ecall.len
                 } else run {
-                    say Invalid file descriptor
+                    say Invalid file descriptor in write ecall
+                    scoreboard players set #running riscvmc 0
+                }
+            }  else execute if data storage bitops:tmp {ecall: {type: "SYS_read"}} run {
+                # a0
+                data modify storage bitops:tmp ecall.fd set from storage riscvmc:memory reg.01010
+                # a1
+                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01011
+                # a2
+                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01100
+
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
+                function bitops:to_num
+                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.fd
+                function bitops:to_str
+                execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(0, 32) %>"} run {
+                    scoreboard players set #i riscvmc 1
+                    data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
+                    data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+
+                    block { with storage bitops:tmp
+                        $execute if score #i riscvmc matches 1..$(temp_len) run {
+                            function ascii:get_digits
+
+                            execute if data storage ascii:tmp digits run {
+                                data modify storage mem:tmp addr set from storage bitops:tmp digits
+                                data modify storage mem:tmp data set from storage ascii:tmp digits
+                                function mem:put
+
+                                data modify storage bitops:tmp a_digits set from storage mem:tmp addr
+                                function bitops:add
+
+                                scoreboard players add #i riscvmc 1
+                                function ^1 with storage bitops:tmp
+                            }
+                        }
+                    }
+
+                    scoreboard players operation #i riscvmc += #n1 riscvmc
+                    execute store result storage bitops:tmp int_num int 1 run scoreboard players get #i riscvmc
+                    function bitops:from_int
+
+                    data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp digits
+                } else run {
+                    say Invalid file descriptor in read ecall
                     scoreboard players set #running riscvmc 0
                 }
             } else execute if data storage bitops:tmp {ecall: {type: "SYS_exit"}} run {
@@ -758,6 +806,8 @@ function step {
             data modify storage bitops:tmp a_digits set from storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %>
             function bitops:to_hex_str
             data modify storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %> set from storage bitops:tmp str
+        } else run {
+            data modify storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %> set value "00000000"
         }
     }
 }

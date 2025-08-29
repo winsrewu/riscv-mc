@@ -10,6 +10,9 @@ import ./num_to_binary_array.js
 
 function onload minecraft:onload {
     data modify storage ascii:tmp buffer set value ""
+    data modify storage ascii:tmp input_buffer set value ""
+    
+    scoreboard objectives add ascii dummy
 }
 
 # tmp example:
@@ -40,6 +43,40 @@ function flush_buffer {
         $say $(buffer)
     }
     data modify storage ascii:tmp buffer set value ""
+}
+
+# tmp example:
+# -
+
+# result:
+# digits: [...] (8 bit length array, if input_buffer is not empty)
+# digits: None (if input_buffer is empty)
+function get_digits {
+    data remove storage ascii:tmp digits
+    scoreboard players set #flag ascii 1
+
+    execute unless data storage ascii:tmp {input_buffer: ""} run {
+        data modify storage ascii:tmp ch set string storage ascii:tmp input_buffer 0 1
+        REPEAT (0, 255) as i {
+            IF is_printable(i) && is_legal(i) {
+                execute if score #flag ascii matches 1 run {
+                    execute if data storage ascii:tmp {ch: "<% get_corresponding_char(i) %>"} run {
+                        data modify storage ascii:tmp digits set value <% from_num(i, 8) %>
+                        scoreboard players set #flag ascii 0
+                    }
+                }   
+            }
+            IF is_printable(i) && !is_legal(i) {
+                execute if score #flag ascii matches 1 run {
+                    execute if data storage ascii:tmp {ch: "\<% get_corresponding_char(i) %>"} run {
+                        data modify storage ascii:tmp digits set value <% from_num(i, 8) %>
+                        scoreboard players set #flag ascii 0
+                    }
+                }   
+            }
+        }
+        data modify storage ascii:tmp input_buffer set string storage ascii:tmp input_buffer 1
+    }
 }
 
 function test {
