@@ -717,8 +717,8 @@ function execute_inst {
 
                     data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp ecall.len
                 } else run {
-                    say Invalid file descriptor in write ecall
-                    scoreboard players set #running riscvmc 0
+                    say Invalid file descriptor in write ecall, ignored
+                    # scoreboard players set #running riscvmc 0
                 }
             }  else execute if data storage bitops:tmp {ecall: {type: "SYS_read"}} run {
                 # a0
@@ -763,8 +763,8 @@ function execute_inst {
 
                     data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp digits
                 } else run {
-                    say Invalid file descriptor in read ecall
-                    scoreboard players set #running riscvmc 0
+                    say Invalid file descriptor in read ecall, ignored
+                    # scoreboard players set #running riscvmc 0
                 }
             } else execute if data storage bitops:tmp {ecall: {type: "SYS_exit"}} run {
                 data modify storage bitops:tmp ecall.status set from storage riscvmc:memory reg.01010
