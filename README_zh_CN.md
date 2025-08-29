@@ -38,9 +38,13 @@
 
 # 注意事项
 - 输出内容会被缓冲，直到遇到换行符 `\n` 才会显示。
-- 目前仅支持 `exit` 和 `write` 两个系统调用，因此无法使用 `scanf` 或其他输入函数。
+- 我只实现了 exit、read 和 write 系统调用。你可以使用 scanf，但 read 操作是非阻塞的，因此在运行程序之前，必须像这样设置 ascii tmp：
+```
+/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
+```
 - 程序入口点在 0x80000000, 但是你可以更改
 - 我在python模拟器内提供了 systemcalls.c
+- 存在一些问题，例如无效的文件描述符。我不清楚原因，我在 spike 上尝试过，结果也是一样的。但大部分代码都能正常工作。
 
 # 故障排查
 如果程序运行出错，你可以使用 `riscvmctester` 模块：导入正确的程序计数器（PC）序列，模拟器会在运行时自动比对。  

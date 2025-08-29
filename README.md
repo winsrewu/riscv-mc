@@ -37,9 +37,13 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 
 # Good to know
 - The output is buffered until a \n is encountered.
-- I only implemented exit and write system calls, which means you cant use scanf or other input functions.
+- I only implemented exit read and write system calls. You can use scanf. But the read action is not blocking, so you must set the ascii tmp like this before running the program:
+```
+/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
+```
 - The entry point of the program is hardcoded to 0x80000000, but you can change it.
 - I have provided a systemcalls.c in the python emulator.
+- There do have some problems, like invaild file descriptor. I dont know why, i tried it on spike and the result is the same. But most of code works fine.
 
 # Troubleshooting
 If your program breaks, you can use the riscvmctester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
