@@ -3,7 +3,9 @@
 # riscv-mc
 这是一个为 Minecraft 设计的 RISC-V 指令集模拟器数据包（Datapack）。  
 它支持完整的 RV32I 指令集，**但不包括 CSR 指令**。  
-本数据包使用 [MC-Build](https://mcbuild.dev) 构建。
+本数据包使用 [MC-Build](https://mcbuild.dev) 构建。  
+
+类似的仓库 https://github.com/SuperTails/riscvcraft 但是支持 rv32ima. 该作者也有对 llvm / wasm 的mc数据包支持。
 
 # 使用方法
 ### 编译数据包
@@ -45,7 +47,11 @@
 - 程序入口点在 0x80000000, 但是你可以更改
 - 我在python模拟器内提供了 systemcalls.c
 - 存在一些问题，例如无效的文件描述符。我不清楚原因，我在 spike 上尝试过，结果也是一样的。但大部分代码都能正常工作。
+- 我想我不会支持特权架构。
 
 # 故障排查
 如果程序运行出错，你可以使用 `riscvmctester` 模块：导入正确的程序计数器（PC）序列，模拟器会在运行时自动比对。  
 此外，你也可以使用 Python 版模拟器或 Spike 进行调试。上述 Python 模拟器支持打印每步的寄存器状态、监控内存访问等调试功能，便于定位问题。
+
+# TODO
+懒得翻译了自己去看英文版本

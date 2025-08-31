@@ -3,7 +3,9 @@ English | [简体中文](README_zh_CN.md)
 # riscv-mc
 This datapack provides a RISC-V emulator for Minecraft.
 It supports RV32I instruction sets, except for csr instructions.  
-This datapack is built using https://mcbuild.dev.
+This datapack is built using https://mcbuild.dev.  
+
+Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This author also have llvm / wasm support for mc datapack.
 
 # Usage
 ### Compiling the datapack
@@ -44,10 +46,10 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 - The entry point of the program is hardcoded to 0x80000000, but you can change it.
 - I have provided a systemcalls.c in the python emulator.
 - There do have some problems, like invaild file descriptor. I dont know why, i tried it on spike and the result is the same. But most of code works fine.
+- I think I won't support privileged architecture.
 
 # Troubleshooting
 If your program breaks, you can use the riscvmctester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
 
 # TODO
-- Support the privileged architecture
-- Optimize the SLOW bit operations
+- [ ] Optimize the SLOW bit operations
