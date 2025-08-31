@@ -52,4 +52,4 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 If your program breaks, you can use the riscvmctester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
 
 # TODO
-- [ ] Optimize the SLOW bit operations
+- [ ] Optimizing
