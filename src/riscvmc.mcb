@@ -791,6 +791,10 @@ function step {
     function *fetch_inst
     function *decode_inst
     function *execute_inst
+}
+
+function debug_step {
+    function *step
 
     data modify storage riscvmc:debug pc set from storage riscvmc:memory pc
     data modify storage riscvmc:debug decode_map set from storage riscvmc:memory decode_map

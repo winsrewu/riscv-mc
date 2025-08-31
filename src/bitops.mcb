@@ -180,6 +180,33 @@ function add {
 # b_digits: [...] (... 0b0011)
 
 # result:
+# digits: [...] (... 0b0101)
+
+# RUBBISH
+
+# function add {
+#     # function *add_unoptimized
+#     data modify storage bitops:tmp add_func.b set from storage bitops:tmp b_digits
+
+#     function *to_num_signed
+#     scoreboard players operation #a_digits bitops = #num bitops
+
+#     data modify storage bitops:tmp a_digits set from storage bitops:tmp add_func.b
+#     function *to_num_signed
+#     scoreboard players operation #b_digits bitops = #num bitops
+
+#     scoreboard players operation #a_digits bitops += #b_digits bitops
+
+#     execute store result storage bitops:tmp int_num int 1 run scoreboard players get #a_digits bitops
+#     function *from_int
+# }
+
+
+# tmp example:
+# a_digits: [...] (... 0b0010)
+# b_digits: [...] (... 0b0011)
+
+# result:
 # digits: [...] (... 0b0010)
 function subtract {
     data modify storage bitops:tmp a_temp set from storage bitops:tmp a_digits
@@ -578,4 +605,43 @@ function to_num {
     }
 
     execute store result storage bitops:tmp num long 1 run scoreboard players get #num bitops
+}
+
+
+# tmp example:
+# a_digits: [...] (... 0b1001011)
+
+# result:
+# #num: 11 (signed integer)
+function to_num_signed {
+    scoreboard players set #num bitops 0
+    scoreboard players set #num_flag bitops 1
+
+    data modify storage bitops:tmp to_num_func.sign set from storage bitops:tmp a_digits[0]
+
+    execute if data storage bitops:tmp {to_num_func: {sign: true}} run {
+        scoreboard players set #num_flag bitops -1
+
+        function *bitwise_not
+        
+        data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+        data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+
+        function *add
+
+        data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+    }
+
+    data modify storage bitops:tmp to_num_signed.temp set from storage bitops:tmp a_digits[0]
+    execute if data storage bitops:tmp {to_num_signed: {temp: true}} run {
+        # only happen when the number is 0x80000000
+        scoreboard players set #num bitops -2147483648
+    } else run {
+        REPEAT (0, 30) as i {
+            execute store result score #b<%i%> bitops run data get storage bitops:tmp a_digits[<%31 - i%>]
+            execute if score #b<%i%> bitops matches 1 run scoreboard players operation #num bitops += #<% 2 ** i %> bitops
+        }
+
+        scoreboard players operation #num bitops *= #num_flag bitops
+    }
 }

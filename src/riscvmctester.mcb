@@ -10,7 +10,7 @@ function reset {
 
 function tick {
     execute if score #running riscvmc matches 1 run {
-        function riscvmc:step
+        function riscvmc:debug_step
         scoreboard players add #count riscvmctest 1
         execute store result storage riscvmctest:tmp count int 1 run scoreboard players get #count riscvmctest
         
