@@ -7,3 +7,4 @@ mv app.mem ../python
 cd ../python
 python3 mem_to_mcf.py app.mem
 mv app.mcfunction ../data/loader/function
+mv decode_map.mcfunction ../data/loader/function
