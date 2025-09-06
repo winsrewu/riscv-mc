@@ -1,0 +1,3 @@
+[submodule "pyriscv"]
+	path = pyriscv
+	url = https://github.com/winsrewu/pyriscv
