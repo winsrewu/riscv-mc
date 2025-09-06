@@ -675,7 +675,7 @@ function execute_inst {
             data modify storage bitops:tmp a_digits set from storage riscvmc:memory reg.10001
             function bitops:to_str
 
-            REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93}) as key, value {
+            REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93, SYS_run_command: 513, SYS_run_if: 514}) as key, value {
                 execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
                     data modify storage bitops:tmp ecall.type set value "<% key %>"
                 }
@@ -774,6 +774,94 @@ function execute_inst {
                     $say Exiting with code $(num)
                 }
                 scoreboard players set #running riscvmc 0
+            } else execute if data storage bitops:tmp {ecall: {type: "SYS_run_command"}} run {
+                # a0
+                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01010
+                # a1
+                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01011
+
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
+                function bitops:to_num
+                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+
+                scoreboard players set #i riscvmc 1
+                data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
+                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+
+                function ascii:clear_inst_buffer
+
+                block { with storage bitops:tmp
+                    $execute if score #i riscvmc matches ..$(temp_len) run {
+                        data modify storage mem:tmp addr set from storage bitops:tmp digits
+                        function mem:get
+                        data modify storage ascii:tmp digits set from storage mem:tmp data
+                        function ascii:process_digits_inst
+
+                        data modify storage bitops:tmp a_digits set from storage mem:tmp addr
+                        function bitops:add
+
+                        scoreboard players add #i riscvmc 1
+                        function ^1 with storage bitops:tmp
+                    }
+                }
+
+                block { with storage ascii:tmp
+                    $$(inst_buffer)
+                }
+
+                function ascii:clear_inst_buffer
+            } else execute if data storage bitops:tmp {ecall: {type: "SYS_exit"}} run {
+                data modify storage bitops:tmp ecall.status set from storage riscvmc:memory reg.01010
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.status
+                function bitops:to_num
+                block { with storage bitops:tmp
+                    $say Exiting with code $(num)
+                }
+                scoreboard players set #running riscvmc 0
+            } else execute if data storage bitops:tmp {ecall: {type: "SYS_run_if"}} run {
+                # a0
+                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01010
+                # a1
+                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01011
+
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
+                function bitops:to_num
+                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+
+                scoreboard players set #i riscvmc 1
+                data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
+                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+
+                function ascii:clear_inst_buffer
+
+                block { with storage bitops:tmp
+                    $execute if score #i riscvmc matches ..$(temp_len) run {
+                        data modify storage mem:tmp addr set from storage bitops:tmp digits
+                        function mem:get
+                        data modify storage ascii:tmp digits set from storage mem:tmp data
+                        function ascii:process_digits_inst
+
+                        data modify storage bitops:tmp a_digits set from storage mem:tmp addr
+                        function bitops:add
+
+                        scoreboard players add #i riscvmc 1
+                        function ^1 with storage bitops:tmp
+                    }
+                }
+
+                scoreboard players set #syscall_if_flag riscvmc 0
+
+                block { with storage ascii:tmp
+                    $execute if data storage riscvmc:if $(inst_buffer) run scoreboard players set #syscall_if_flag riscvmc 1
+                }
+
+                execute if score #syscall_if_flag riscvmc matches 1 run {
+                    data modify storage riscvmc:memory reg.01010 set value <% from_num(1, 32) %>
+                } else run {
+                    data modify storage riscvmc:memory reg.01010 set value <% from_num(0, 32) %>
+                }
+
+                function ascii:clear_inst_buffer
             } else run {
                 say Invalid ecall number
                 scoreboard players set #running riscvmc 0

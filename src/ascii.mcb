@@ -7,10 +7,12 @@ import ./num_to_binary_array.js
 # char 32 - 126 will be put into the buffer
 # char 127 will be ignored
 # other chars will be replaced by '?'
+# for instant buffer, \n will be ignored
 
 function onload minecraft:onload {
     data modify storage ascii:tmp buffer set value ""
     data modify storage ascii:tmp input_buffer set value ""
+    data modify storage ascii:tmp inst_buffer set value ""
     
     scoreboard objectives add ascii dummy
 }
@@ -36,6 +38,28 @@ function process_digits {
             }
         }
     }
+}
+
+
+# tmp example:
+# digits: [...] (8 bit length array)
+
+# result:
+# -
+function process_digits_inst {
+    data modify storage bitops:tmp c_digits set from storage ascii:tmp digits
+    function bitops:left_pad_32
+    data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+    function bitops:to_num
+    REPEAT (0, 255) as i {
+        execute if data storage bitops:tmp {num: <%i%>L} run { with storage ascii:tmp
+            $data modify storage ascii:tmp inst_buffer set value "$(inst_buffer)<% get_should_print(i) %>"
+        }
+    }
+}
+
+function clear_inst_buffer {
+    data modify storage ascii:tmp inst_buffer set value ""
 }
 
 function flush_buffer {
