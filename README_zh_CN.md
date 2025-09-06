@@ -57,6 +57,15 @@
 | 93   | exit         | error_code    | 无             |
 | 513  | run_command  | ptr, len      | 无             |
 | 514  | run_if       | ptr, len      | if 语句结果，0 或 1 |
+| 515    | place_block | x, y, z, block_type | - |
+
+# block types
+| id | name |
+|----|------|
+| 0  | air  |
+| 1  | stone |
+| 2  | dirt |
+| 3  | birch_wood |
 
 ## 说明
 - read: 从文件描述符（仅支持 0，即标准输入）读取数据到内存指针处，返回读取的字节数。

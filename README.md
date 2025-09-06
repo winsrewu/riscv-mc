@@ -57,7 +57,16 @@ If your program breaks, you can use the riscvmctester, where you can import a co
 | 64     | write    | fd, ptr, len | number of bytes written |
 | 93     | exit     | error_code | - |
 | 513    | run_command | ptr, len | - |
-| 514    | run_if | ptr, len | the result of the if statement, 0 or 1|
+| 514    | run_if | ptr, len | the result of the if statement, 0 or 1 |
+| 515    | place_block | x, y, z, block_type | - |
+
+# block types
+| id | name |
+|----|------|
+| 0  | air  |
+| 1  | stone |
+| 2  | dirt |
+| 3  | birch_wood |
 
 ## explanation
 - read: read the buffer from the file descriptor (only support 0, which is stdin) to the memory pointer, return the number of bytes read.

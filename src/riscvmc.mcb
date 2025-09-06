@@ -696,7 +696,7 @@ function execute_inst {
             data modify storage bitops:tmp a_digits set from storage riscvmc:memory reg.10001
             function bitops:to_str
 
-            REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93, SYS_run_command: 513, SYS_run_if: 514}) as key, value {
+            REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93, SYS_run_command: 513, SYS_run_if: 514, SYS_place_block: 515}) as key, value {
                 execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
                     data modify storage bitops:tmp ecall.type set value "<% key %>"
                 }
@@ -883,6 +883,48 @@ function execute_inst {
                 }
 
                 function ascii:clear_inst_buffer
+            } else execute if data storage bitops:tmp {ecall: {type: "SYS_place_block"}} run {
+                # a0
+                data modify storage bitops:tmp ecall.xa set from storage riscvmc:memory reg.01010
+                # a1
+                data modify storage bitops:tmp ecall.ya set from storage riscvmc:memory reg.01011
+                # a2
+                data modify storage bitops:tmp ecall.za set from storage riscvmc:memory reg.01100
+                # a3
+                data modify storage bitops:tmp ecall.block_id set from storage riscvmc:memory reg.01101
+
+                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.block_id
+                function bitops:to_str
+
+                scoreboard players set #block_place_flag riscvmc 0
+
+                REPEAT ({air: 0, stone: 1, dirt: 2, birch_wood: 3}) as key, value {
+                    execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
+                        data modify storage bitops:tmp ecall.block set value "<% key %>"
+                        scoreboard players set #block_place_flag riscvmc 1
+                    }
+                }
+
+                execute if score #block_place_flag riscvmc matches 1 run {
+                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.xa
+                    function bitops:to_num
+                    data modify storage bitops:tmp ecall.x set from storage bitops:tmp num
+
+                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.ya
+                    function bitops:to_num
+                    data modify storage bitops:tmp ecall.y set from storage bitops:tmp num
+
+                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.za
+                    function bitops:to_num
+                    data modify storage bitops:tmp ecall.z set from storage bitops:tmp num
+
+                    block { with storage bitops:tmp ecall
+                        $setblock $(x) $(y) $(z) $(block)
+                    }
+                } else run {
+                    say Invalid block ID in place block ecall
+                    scoreboard players set #running riscvmc 0
+                }                
             } else run {
                 say Invalid ecall number
                 scoreboard players set #running riscvmc 0

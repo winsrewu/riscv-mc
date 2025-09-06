@@ -43,27 +43,7 @@ static bool game_over = false;
 
 void set_block(int x, int y, int z, int id)
 {
-    char buffer[50];
-
-    switch (id)
-    {
-    case AIR:
-        snprintf(buffer, 50, "setblock %d %d %d air", x, y, z);
-        break;
-    case STONE:
-        snprintf(buffer, 50, "setblock %d %d %d stone", x, y, z);
-        break;
-    case DIRT:
-        snprintf(buffer, 50, "setblock %d %d %d dirt", x, y, z);
-        break;
-    case WOOD:
-        snprintf(buffer, 50, "setblock %d %d %d birch_wood", x, y, z);
-        break;
-    default:
-        return;
-    }
-
-    run_command(buffer, strlen(buffer));
+    place_block(x, y, z, id);
 }
 
 key_press get_key_press()
