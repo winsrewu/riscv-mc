@@ -53,6 +53,10 @@ function reset {
     data modify storage riscvmc:memory pc set value <% from_num(0x80000000, 32) %>
     function mem:remove_reg
     function mem:remove_memory
+
+    # remove pregenerated decode_map
+    data remove storage riscvmc:decode_map i
+    data remove storage riscvmc:decode_map ip
 }
 
 function pc_add_4 {
@@ -100,12 +104,29 @@ function reset_decode_map {
     data remove storage riscvmc:memory decode_map_processed
 }
 
-# decode instruction, process r_inst and store parts into decode_map
-# and then read the decoded parts and decide its type, store it into decode_map_processed
+# if cache hit, set from cache
+# otherwise call _decode_inst
 function decode_inst {
     # process decode_map
     function *reset_decode_map
 
+    data modify storage bitops:tmp a_digits set from storage riscvmc:memory r_inst
+    function bitops:to_str
+    block { with storage bitops:tmp
+        $execute if data storage riscvmc:decode_map i.$(str) run { with storage bitops:tmp
+            # hit
+            $data modify storage riscvmc:memory decode_map_processed set from storage riscvmc:decode_map ip.$(str)
+            $data modify storage riscvmc:memory decode_map set from storage riscvmc:decode_map i.$(str)
+        } else run {
+            # miss
+            function *_decode_inst
+        }
+    }
+}
+
+# decode instruction, process r_inst and store parts into decode_map
+# and then read the decoded parts and decide its type, store it into decode_map_processed
+function _decode_inst {
     # CODECLASS
     data modify storage riscvmc:memory decode_map.CODECLASS[0] set from storage riscvmc:memory r_inst[30]
     data modify storage riscvmc:memory decode_map.CODECLASS[1] set from storage riscvmc:memory r_inst[31]

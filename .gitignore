@@ -2,6 +2,7 @@
 data
 */__pycache__
 python/app.mcfunction
+python/decode_map.mcfunction
 python/res.txt
 python/pc.mcfunction
 
