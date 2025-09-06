@@ -512,15 +512,12 @@ function xor {
 # str: "....001011"
 # notice: output is unsigned and always 32 bits
 function to_str {
-    data modify storage bitops:tmp str set value ""
-
     REPEAT (0, 31) as i {
-        data modify storage bitops:tmp i set from storage bitops:tmp a_digits[<%i%>]
-        execute if data storage bitops:tmp {i:true} run { with storage bitops:tmp
-            $data modify storage bitops:tmp str set value "$(str)1"
-        } else run { with storage bitops:tmp
-            $data modify storage bitops:tmp str set value "$(str)0"
-        }
+        data modify storage bitops:tmp to_str.t.<%i%> set from storage bitops:tmp a_digits[<%i%>]
+    }
+
+    block { with storage bitops:tmp to_str.t
+        $data modify storage bitops:tmp str set value "$(0)$(1)$(2)$(3)$(4)$(5)$(6)$(7)$(8)$(9)$(10)$(11)$(12)$(13)$(14)$(15)$(16)$(17)$(18)$(19)$(20)$(21)$(22)$(23)$(24)$(25)$(26)$(27)$(28)$(29)$(30)$(31)"
     }
 }
 
@@ -547,6 +544,21 @@ function to_hex_str {
     }
 }
 
+
+# tmp example:
+# c_digits: [...] (5 digits) NOT 32-bit
+
+# result:
+# str: "...."
+# notice: output is unsigned and length of 5
+function to_str_5 {
+    REPEAT (0, 4) as i {
+        data modify storage bitops:tmp to_str.t.<%i%> set from storage bitops:tmp c_digits[<%i%>]
+    }
+    block { with storage bitops:tmp to_str.t
+        $data modify storage bitops:tmp str set value "$(0)$(1)$(2)$(3)$(4)"
+    }
+}
 
 
 # tmp example:
