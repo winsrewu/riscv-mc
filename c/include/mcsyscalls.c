@@ -15,7 +15,7 @@ void run_command(char *ptr, int len)
 
 int run_if(char *ptr, int len)
 {
-    int register a0 asm("a0") = (int)ptr;
+    register int a0 asm("a0") = (int)ptr;
     register int a1 asm("a1") = len;
     register int a7 asm("a7") = SYS_run_if;
 
