@@ -78,10 +78,16 @@ def pre_generate_decode_map(emulator):
         decode_map_output["CODECLASS"]          = True
         decode_map_output["OPCODE"]             = decode_map.OPCODE.name
         if decode_map.OPCODE == PYRSISCV_OPCODE.OP or decode_map.OPCODE == PYRSISCV_OPCODE.OP_IMM:
+            if decode_map.FUNCT3_OP_IMM_OP == None:
+                continue
             decode_map_output["FUNCT3_OP_IMM_OP"] = decode_map.FUNCT3_OP_IMM_OP.name
         elif decode_map.OPCODE == PYRSISCV_OPCODE.BRANCH:
+            if decode_map.FUNCT3_BRANCH == None:
+                continue
             decode_map_output["FUNCT3_BRANCH"]  = decode_map.FUNCT3_BRANCH.name
         elif decode_map.OPCODE == PYRSISCV_OPCODE.LOAD or decode_map.OPCODE == PYRSISCV_OPCODE.STORE:
+            if decode_map.FUNCT3_LOAD_STORE == None:
+                continue
             decode_map_output["FUNCT3_LOAD_STORE"] = decode_map.FUNCT3_LOAD_STORE.name
         
         if decode_map.EBREAK:
