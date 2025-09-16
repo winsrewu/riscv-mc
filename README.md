@@ -7,6 +7,9 @@ This datapack is built using https://mcbuild.dev.
 
 Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This author also have llvm / wasm support for mc datapack.
 
+# Performance
+**3.2k** commands per instruction
+
 # Usage
 ### Compiling the datapack
 1. Install mc-build, please follow the instructions on https://mcbuild.dev.
