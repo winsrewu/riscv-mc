@@ -183,6 +183,34 @@ template add {
 
 
 # args:
+# a_digits: [...] (... 0b0010) MODIFY INPUTS
+
+# result:
+# a_digits: [...] (... 0b0011)
+# MODIFY #i
+template add_1 {
+    with a_digits:word {
+        scoreboard players set #i bitops 31
+
+        block {
+            execute store result storage bitops:tmp add_1.i int 1 run scoreboard players get #i bitops
+            execute if score #i bitops matches 0.. run { with storage bitops:tmp add_1
+                $data modify storage bitops:tmp add_1.flag set from storage <% a_digits.replace("@", " ") %>[$(i)]
+                execute if data storage bitops:tmp {add_1: {flag: 1b}} run { with storage bitops:tmp add_1
+                    $data modify storage <% a_digits.replace("@", " ") %>[$(i)] set value 0b
+                    scoreboard players operation #i bitops += #n1 bitops
+                    function ^2
+                }
+                execute if data storage bitops:tmp {add_1: {flag: 0b}} run { with storage bitops:tmp add_1
+                    $data modify storage <% a_digits.replace("@", " ") %>[$(i)] set value 1b
+                }
+            }
+        }
+    }
+}
+
+
+# args:
 # a_digits: [...] (... 0b0010)
 # b_digits: [...] (... 0b0011) MODIFY INPUTS
 
@@ -190,15 +218,11 @@ template add {
 # digits: [...] (... 0b0010)
 # MODIFY #carry #a_val #b_val #temp
 template subtract {
-    load {
-        data modify storage bitops:tmp subtract.1 set value <% from_num(1, 32) %>
-    }
-
     with a_digits:word b_digits:word digits:word {
         template bitwise_not <% b_digits %>
 
-        template add <% b_digits %> bitops:tmp@subtract.1 bitops:tmp@subtract.temp
-        template add <% a_digits %> bitops:tmp@subtract.temp <% digits %>
+        template add_1 <% b_digits %>
+        template add <% a_digits %> <% b_digits %> <% digits %>
     }
 }
 
@@ -233,10 +257,6 @@ template equal {
 # notice: output is signed
 # MODIFY #int #n_flag #temp
 template from_int {
-    load {
-        data modify storage bitops:tmp from_int.1 set value <% from_num(1, 32) %>
-    }
-
     with int_num:word digits:word {
         block { with storage <% as_storage(int_num) %>
             $scoreboard players set #int bitops $(<% as_name(int_num) %>)
@@ -249,27 +269,24 @@ template from_int {
             scoreboard players operation #int bitops *= #n1 bitops
         }
 
-        data modify storage bitops:tmp from_int.temp set value []
+        data modify storage <% digits.replace("@", " ") %> set value []
 
         REPEAT (0, 30) as i {
             scoreboard players operation #temp bitops = #int bitops
             scoreboard players operation #temp bitops %= #2 bitops
             execute if score #temp bitops matches 0 run {
-                data modify storage bitops:tmp from_int.temp prepend value false
+                data modify storage <% digits.replace("@", " ") %> prepend value false
             } else run {
-                data modify storage bitops:tmp from_int.temp prepend value true
+                data modify storage <% digits.replace("@", " ") %> prepend value true
             }
             scoreboard players operation #int bitops /= #2 bitops
         }
 
-        data modify storage bitops:tmp from_int.temp prepend value false
+        data modify storage <% digits.replace("@", " ") %> prepend value false
         
         execute if score #n_flag bitops matches 1 run {
-            template bitwise_not bitops:tmp@from_int.temp
-            template add bitops:tmp@from_int.temp bitops:tmp@from_int.1 <% digits %>
-        }
-        execute if score #n_flag bitops matches 0 run {
-            data modify storage <% digits.replace("@", " ") %> set from storage bitops:tmp from_int.temp
+            template bitwise_not <% digits %>
+            template add_1 <% digits %>
         }
     }
 }
@@ -585,10 +602,6 @@ template extract_lowest_5_bits {
 # !! please notice the 30 and 31 bit are ignored in unsigned mode due to scoreboard limit !!
 # MODIFY #num #n_flag #b0 #b1 #b2 #b3 #b4 ... #b31
 template to_num {
-    load {
-        data modify storage bitops:tmp to_num.1 set value <% from_num(1, 32) %>
-    }
-
     with unsigned a_digits:word {
         scoreboard players set #num bitops 0
         REPEAT (0, 29) as i {
@@ -602,16 +615,13 @@ template to_num {
         scoreboard players set #n_flag bitops 1
 
         data modify storage bitops:tmp to_num.sign set from storage <% a_digits.replace("@", " ") %>[0]
-        data modify storage bitops:tmp to_num.temp1 set from storage <% a_digits.replace("@", " ") %>
+        data modify storage bitops:tmp to_num.temp set from storage <% a_digits.replace("@", " ") %>
 
         execute if data storage bitops:tmp {to_num: {sign: true}} run {
             scoreboard players set #n_flag bitops -1
 
-            template bitwise_not bitops:tmp@to_num.temp1
-            template add bitops:tmp@to_num.temp1 bitops:tmp@to_num.1 bitops:tmp@to_num.temp
-        }
-        execute if data storage bitops:tmp {to_num: {sign: false}} run {
-            data modify storage bitops:tmp to_num.temp set from storage bitops:tmp to_num.temp1
+            template bitwise_not bitops:tmp@to_num.temp
+            template add_1 bitops:tmp@to_num.temp
         }
 
         data modify storage bitops:tmp to_num.sign set from storage bitops:tmp to_num.temp[0]

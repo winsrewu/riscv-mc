@@ -7,9 +7,6 @@ function onload minecraft:load {
     scoreboard objectives add riscvmc dummy
     scoreboard objectives add mcb.interal dummy
 
-    data modify storage riscvmc:temp temp.1 set value <% from_num(1, 32) %>
-    data modify storage riscvmc:temp temp.4 set value <% from_num(4, 32) %>
-
     data modify storage riscvmc:temp temp.CODECLASS set value [1b, 1b]
 
     scoreboard players set #n1 riscvmc -1
@@ -68,8 +65,7 @@ function reset {
 }
 
 function pc_add_4 {
-    data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
-    template add riscvmc:temp@temp.pc riscvmc:temp@temp.4 riscvmc:memory@pc
+    data modify storage riscvmc:memory pc set from storage riscvmc:temp temp.pc_a4
 }
 
 # fetch instruction from memory[pc], store it in r_inst
@@ -84,9 +80,10 @@ function fetch_inst {
             data modify storage riscvmc:memory r_inst[<% i * 8 + j %>] set from storage riscvmc:temp temp.mem[<%j%>]
         }
 
-        data modify storage riscvmc:temp temp.pc_old set from storage riscvmc:temp temp.pc
-        template add riscvmc:temp@temp.pc_old riscvmc:temp@temp.1 riscvmc:temp@temp.pc
+        template add_1 riscvmc:temp@temp.pc
     }
+
+    data modify storage riscvmc:temp temp.pc_a4 set from storage riscvmc:temp temp.pc
 }
 
 function reset_decode_map {
@@ -446,8 +443,7 @@ function execute_inst {
                     }
 
                     IF (i != 0) {
-                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                        template add_1 riscvmc:temp@temp.load
                     }
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "H"}} run {
@@ -461,8 +457,7 @@ function execute_inst {
                     }
 
                     IF (i != 2) {
-                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                        template add_1 riscvmc:temp@temp.load
                     }
                 }
 
@@ -480,8 +475,7 @@ function execute_inst {
                     }
 
                     IF (i != 2) {
-                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                        template add_1 riscvmc:temp@temp.load
                     }
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "B"}} run {
@@ -527,8 +521,7 @@ function execute_inst {
 
                     template put riscvmc:temp@temp.store riscvmc:temp@temp.store_data_raw
 
-                    template add riscvmc:temp@temp.store riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                    data modify storage riscvmc:temp temp.store set from storage riscvmc:temp temp.t
+                    template add_1 riscvmc:temp@temp.store
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "H"}} run {
                 data modify storage riscvmc:temp temp.store_data_raw set value <% from_num(0, 8) %>
@@ -539,9 +532,8 @@ function execute_inst {
                     }
 
                     template put riscvmc:temp@temp.store riscvmc:temp@temp.store_data_raw
-
-                    template add riscvmc:temp@temp.store riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                    data modify storage riscvmc:temp temp.store set from storage riscvmc:temp temp.t
+                    
+                    template add_1 riscvmc:temp@temp.store
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "B"}} run {
                 data modify storage riscvmc:temp temp.store_data_raw set value <% from_num(0, 8) %>
@@ -591,8 +583,7 @@ function execute_inst {
                             template get riscvmc:temp@ecall.buf ascii:tmp@digits
                             function ascii:process_digits
 
-                            template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                            data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
+                            template add_1 riscvmc:temp@ecall.buf
 
                             scoreboard players add #i riscvmc 1
                             function ^1
@@ -626,8 +617,7 @@ function execute_inst {
                             execute if data storage ascii:tmp digits run {
                                 template put riscvmc:temp@ecall.buf ascii:tmp@digits
 
-                                template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
+                                template add_1 riscvmc:temp@ecall.buf
 
                                 scoreboard players add #i riscvmc 1
                                 function ^1
@@ -670,8 +660,7 @@ function execute_inst {
                         template get riscvmc:temp@ecall.buf ascii:tmp@digits
                         function ascii:process_digits_inst
 
-                        template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                        data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
+                        template add_1 riscvmc:temp@ecall.buf
 
                         scoreboard players add #i riscvmc 1
                         function ^1
@@ -701,8 +690,7 @@ function execute_inst {
                         template get riscvmc:temp@ecall.buf ascii:tmp@digits
                         function ascii:process_digits_inst
 
-                        template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
-                        data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
+                        template add_1 riscvmc:temp@ecall.buf
 
                         scoreboard players add #i riscvmc 1
                         function ^1
