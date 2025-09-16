@@ -1,0 +1,73 @@
+import ./num_to_binary_array.js
+import ./argument_parser.js
+import ./bitopst.mcbt
+
+# the args should be the storage path of the array, connecting the namespace and path with "@", for example:
+# yournamespace:tmp a => "yournamespace:tmp@a"
+
+# args:
+# addr: [...] (32 bit length array)
+
+# result:
+# data: [0b,1b,1b,0b,1b,1b,1b,1b] (8 bit length array)
+template get {
+    with addr:word data:word {
+        template to_str 32 <% addr %> mem:tmp@str
+        data modify storage <% data.replace("@", " ") %> set value <% from_num(0, 8) %>
+
+        block { with storage mem:tmp
+            $data modify storage <% data.replace("@", " ") %> set from storage riscvmc:memory m.$(str)
+        }
+    }
+}
+
+
+# args:
+# addr: [...] (32 bit length array)
+# data: [0b,1b,1b,0b,1b,1b,1b,1b] (8 bit length array)
+
+# result:
+# -
+template put {
+    with addr:word data:word {
+        template to_str 32 <% addr %> mem:tmp@str
+
+        block { with storage mem:tmp
+            $data modify storage riscvmc:memory m.$(str) set from storage <% data.replace("@", " ") %>
+        }
+    }
+}
+
+
+# args:
+# id: [...] (5 bit length array)
+
+# result:
+# data: [...] (32 bit length array)
+template get_reg {
+    with id:word data:word {
+        template to_str 5 <% id %> mem:tmp@str
+        data modify storage <% data.replace("@", " ") %> set value <% from_num(0, 32) %>
+
+        block { with storage mem:tmp
+            $data modify storage <% data.replace("@", " ") %> set from storage riscvmc:memory reg.$(str)
+        }
+    }
+}
+
+
+# args:
+# id: [...] (5 bit length array)
+# data: [...] (32 bit length array)
+
+# result:
+# -
+template put_reg {
+    with id:word data:word {
+        template to_str 5 <% id %> mem:tmp@str
+
+        execute unless data storage mem:tmp {str: "00000"} run { with storage mem:tmp
+            $data modify storage riscvmc:memory reg.$(str) set from storage <% data.replace("@", " ") %>
+        }
+    }
+}

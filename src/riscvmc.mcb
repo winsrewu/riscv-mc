@@ -1,8 +1,16 @@
 import ./num_to_binary_array.js
+import ./argument_parser.js
+import ./bitopst.mcbt
+import ./memt.mcbt
 
 function onload minecraft:load {
     scoreboard objectives add riscvmc dummy
     scoreboard objectives add mcb.interal dummy
+
+    data modify storage riscvmc:temp temp.1 set value <% from_num(1, 32) %>
+    data modify storage riscvmc:temp temp.4 set value <% from_num(4, 32) %>
+
+    data modify storage riscvmc:temp temp.CODECLASS set value [1b, 1b]
 
     scoreboard players set #n1 riscvmc -1
 }
@@ -60,30 +68,24 @@ function reset {
 }
 
 function pc_add_4 {
-    data modify storage bitops:tmp a_digits set from storage riscvmc:memory pc
-    data modify storage bitops:tmp b_digits set value <% from_num(4, 32) %>
-    function bitops:add
-    data modify storage riscvmc:memory pc set from storage bitops:tmp digits
+    data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
+    template add riscvmc:temp@temp.pc riscvmc:temp@temp.4 riscvmc:memory@pc
 }
 
 # fetch instruction from memory[pc], store it in r_inst
 function fetch_inst {
-    data modify storage bitops:tmp digits set from storage riscvmc:memory pc
-    data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
-    
+    data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
     data modify storage riscvmc:memory r_inst set value <% from_num(0, 32) %>
 
     REPEAT (3, 0) as i {
-        data modify storage mem:tmp addr set from storage bitops:tmp digits
-        data modify storage bitops:tmp fetch_inst.digits set from storage bitops:tmp digits
-        function mem:get
+        template get riscvmc:temp@temp.pc riscvmc:temp@temp.mem
 
         REPEAT (0, 7) as j {
-            data modify storage riscvmc:memory r_inst[<% i * 8 + j %>] set from storage mem:tmp data[<%j%>]
+            data modify storage riscvmc:memory r_inst[<% i * 8 + j %>] set from storage riscvmc:temp temp.mem[<%j%>]
         }
 
-        data modify storage bitops:tmp a_digits set from storage bitops:tmp fetch_inst.digits
-        function bitops:add
+        data modify storage riscvmc:temp temp.pc_old set from storage riscvmc:temp temp.pc
+        template add riscvmc:temp@temp.pc_old riscvmc:temp@temp.1 riscvmc:temp@temp.pc
     }
 }
 
@@ -110,10 +112,9 @@ function decode_inst {
     # process decode_map
     function *reset_decode_map
 
-    data modify storage bitops:tmp a_digits set from storage riscvmc:memory r_inst
-    function bitops:to_str
-    block { with storage bitops:tmp
-        $execute if data storage riscvmc:decode_map i.$(str) run { with storage bitops:tmp
+    template to_str 32 riscvmc:memory@r_inst riscvmc:temp@temp.str
+    block { with storage riscvmc:temp temp
+        $execute if data storage riscvmc:decode_map i.$(str) run { with storage riscvmc:temp temp
             # hit
             $data modify storage riscvmc:memory decode_map_processed set from storage riscvmc:decode_map ip.$(str)
             $data modify storage riscvmc:memory decode_map set from storage riscvmc:decode_map i.$(str)
@@ -203,9 +204,7 @@ function _decode_inst {
     data remove storage riscvmc:memory decode_map_processed
 
     # CODECLASS (true if 0b11, false otherwise)
-    data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.CODECLASS
-    data modify storage bitops:tmp d_digits set value [1b,1b]
-    function bitops:equal_not_32
+    template equal_not_32 riscvmc:memory@decode_map.CODECLASS riscvmc:temp@temp.CODECLASS
     data modify storage riscvmc:memory decode_map_processed.CODECLASS set value false
     execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.CODECLASS set value true
 
@@ -221,9 +220,9 @@ function _decode_inst {
     # STORE: 01000
     # FENCE: 00011
     REPEAT ({LUI: "[0b,1b,1b,0b,1b]", AUIPC: "[0b,0b,1b,0b,1b]", JAL: "[1b,1b,0b,1b,1b]", JALR: "[1b,1b,0b,0b,1b]", BRANCH: "[1b,1b,0b,0b,0b]", OP_IMM: "[0b,0b,1b,0b,0b]", OP: "[0b,1b,1b,0b,0b]", LOAD: "[0b,0b,0b,0b,0b]", STORE: "[0b,1b,0b,0b,0b]", FENCE: "[0b,0b,0b,1b,1b]"}) as key, value {
-        data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.OPCODE
-        data modify storage bitops:tmp d_digits set value <%value%>
-        function bitops:equal_not_32
+        data modify storage riscvmc:temp temp.eq set value <%value%>
+        template equal_not_32 riscvmc:temp@temp.OPCODE riscvmc:memory@decode_map.OPCODE
+
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.OPCODE set value <%key%>
     }
 
@@ -239,9 +238,8 @@ function _decode_inst {
     # OR: 110
     # AND: 111
     REPEAT ({ADD: "[0b,0b,0b]", SLL: "[0b,0b,1b]", SRL: "[1b,0b,1b]", SLT: "[0b,1b,0b]", SLTU: "[0b,1b,1b]", XOR: "[1b,0b,0b]", OR: "[1b,1b,0b]", AND: "[1b,1b,1b]"}) as key, value {
-        data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.FUNCT3
-        data modify storage bitops:tmp d_digits set value <%value%>
-        function bitops:equal_not_32
+        data modify storage riscvmc:temp temp.eq set value <% value %>
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_OP_IMM_OP set value <%key%>
     }
 
@@ -253,9 +251,8 @@ function _decode_inst {
     # BLTU: 110
     # BGEU: 111
     REPEAT ({BEQ: "[0b,0b,0b]", BNE: "[0b,0b,1b]", BLT: "[1b,0b,0b]", BGE: "[1b,0b,1b]", BLTU: "[1b,1b,0b]", BGEU: "[1b,1b,1b]"}) as key, value {
-        data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.FUNCT3
-        data modify storage bitops:tmp d_digits set value <%value%>
-        function bitops:equal_not_32
+        data modify storage riscvmc:temp temp.eq set value <% value %>
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_BRANCH set value <%key%>
     }
 
@@ -266,9 +263,8 @@ function _decode_inst {
     # BU 100
     # HU: 101
     REPEAT ({B: "[0b,0b,0b]", H: "[0b,0b,1b]", W: "[0b,1b,0b]", BU: "[1b,0b,0b]", HU: "[1b,0b,1b]"}) as key, value {
-        data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.FUNCT3
-        data modify storage bitops:tmp d_digits set value <%value%>
-        function bitops:equal_not_32
+        data modify storage riscvmc:temp temp.eq set value <% value %>
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_LOAD_STORE set value <%key%>
     }
 
@@ -276,9 +272,8 @@ function _decode_inst {
     # if decode_map.FUNCT7 == 0x20 and decode_map.OPCODE == PYRSISCV_OPCODE.OP
     # ADD -> SUB
     # SRL -> SRA
-    data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.FUNCT7
-    data modify storage bitops:tmp d_digits set value <% from_num(0b0100000, 7) %>
-    function bitops:equal_not_32
+    data modify storage riscvmc:temp temp.eq set value <% from_num(0b0100000, 7) %>
+    template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map.FUNCT7
     execute if score #flag bitops matches 1 run {
         execute if data storage riscvmc:memory {decode_map_processed: {OPCODE:"OP"}} run {
             execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP:"ADD"}} run {
@@ -291,15 +286,13 @@ function _decode_inst {
     }
 
     # is EBREAK?
-    data modify storage bitops:tmp c_digits set from storage riscvmc:memory r_inst
-    data modify storage bitops:tmp d_digits set value <% from_num(0x00100073, 32) %>
-    function bitops:equal_not_32
+    data modify storage riscvmc:temp temp.eq set value <% from_num(0x00100073, 32) %>
+    template equal riscvmc:temp@temp.eq riscvmc:memory@r_inst
     execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.EBREAK set value true
 
     # is ECALL?
-    data modify storage bitops:tmp c_digits set from storage riscvmc:memory r_inst
-    data modify storage bitops:tmp d_digits set value <% from_num(0x00000073, 32) %>
-    function bitops:equal_not_32
+    data modify storage riscvmc:temp temp.eq set value <% from_num(0x00000073, 32) %>
+    template equal riscvmc:temp@temp.eq riscvmc:memory@r_inst
     execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.ECALL set value true
 }
 
@@ -309,39 +302,28 @@ function _decode_inst {
 # result is stored in op.result, true or false.
 function process_branch {
     execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BEQ"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:equal
+        template equal riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value false
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory op.result set value true
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BNE"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:equal
+        template equal riscvmc:memory@op.a riscvmc:memory@op.b
+        data modify storage riscvmc:memory op.result set value false
         data modify storage riscvmc:memory op.result set value true
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory op.result set value false
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BLT"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmps
+        template cmps riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value false
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value true
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BLTU"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmpu
+        template cmpu riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value false
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value true
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BGE"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmps
+        template cmps riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value true
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value false
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_BRANCH: "BGEU"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmpu
+        template cmpu riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value true
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value false
     } else run {
@@ -353,63 +335,32 @@ function process_branch {
 # result is stored in op.result, 32 bit length array.
 function process_arithmetic {
     execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "ADD"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:add
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template add riscvmc:memory@op.a riscvmc:memory@op.b riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SUB"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:subtract
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template subtract riscvmc:memory@op.a riscvmc:memory@op.b riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "XOR"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:xor
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template xor riscvmc:memory@op.a riscvmc:memory@op.b riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "OR"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:or
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template or riscvmc:memory@op.a riscvmc:memory@op.b riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "AND"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:and
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template and riscvmc:memory@op.a riscvmc:memory@op.b riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SLT"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmps
+        template cmps riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value <% from_num(0, 32) %>
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value <% from_num(1, 32) %>
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SLTU"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        data modify storage bitops:tmp b_digits set from storage riscvmc:memory op.b
-        function bitops:cmpu
+        template cmpu riscvmc:memory@op.a riscvmc:memory@op.b
         data modify storage riscvmc:memory op.result set value <% from_num(0, 32) %>
         execute if score #cmp bitops matches -1 run data modify storage riscvmc:memory op.result set value <% from_num(1, 32) %>
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SLL"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.b
-        function bitops:extract_lowest_5_bits
-        data modify storage bitops:tmp shift_bits set from storage bitops:tmp num
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        function bitops:shift_left
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template extract_lowest_5_bits riscvmc:memory@op.b riscvmc:temp@temp.num
+        template shift_left riscvmc:memory@op.a riscvmc:temp@temp.num riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SRA"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.b
-        function bitops:extract_lowest_5_bits
-        data modify storage bitops:tmp shift_bits set from storage bitops:tmp num
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        function bitops:arithmetic_shift_right
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template extract_lowest_5_bits riscvmc:memory@op.b riscvmc:temp@temp.num
+        template arithmetic_shift_right riscvmc:memory@op.a riscvmc:temp@temp.num riscvmc:memory@op.result
     } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_OP_IMM_OP: "SRL"}} run {
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.b
-        function bitops:extract_lowest_5_bits
-        data modify storage bitops:tmp shift_bits set from storage bitops:tmp num
-        data modify storage bitops:tmp a_digits set from storage riscvmc:memory op.a
-        function bitops:logical_shift_right
-        data modify storage riscvmc:memory op.result set from storage bitops:tmp digits
+        template extract_lowest_5_bits riscvmc:memory@op.b riscvmc:temp@temp.num
+        template logical_shift_right riscvmc:memory@op.a riscvmc:temp@temp.num riscvmc:memory@op.result
     } else run {
         say Invalid OP FUNCT3
         scoreboard players set #running riscvmc 0
@@ -420,267 +371,186 @@ function process_arithmetic {
 function execute_inst {
     execute if data storage riscvmc:memory {decode_map_processed: {CODECLASS: true}} run {
         execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "JAL"}} run {
-            data modify storage bitops:tmp a_digits set from storage riscvmc:memory pc
-            data modify storage bitops:tmp b_digits set value <% from_num(4, 32) %>
-            function bitops:add
-            data modify storage mem:tmp data set from storage bitops:tmp digits
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template add riscvmc:memory@pc riscvmc:temp@temp.4 riscvmc:temp@temp.pc
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:temp@temp.pc
 
-            data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMJ
-            function bitops:sign_extend_32
-            data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
-            data modify storage bitops:tmp b_digits set from storage riscvmc:memory pc
-            function bitops:add
-            data modify storage riscvmc:memory pc set from storage bitops:tmp digits
+            template sign_extend_32 riscvmc:memory@decode_map.IMMJ
+            data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
+            template add riscvmc:memory@decode_map.IMMJ riscvmc:temp@temp.pc riscvmc:memory@pc
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "JALR"}} run {
-            data modify storage bitops:tmp a_digits set from storage riscvmc:memory pc
-            data modify storage bitops:tmp b_digits set value <% from_num(4, 32) %>
-            function bitops:add
-            data modify storage bitops:tmp temp set from storage bitops:tmp digits
+            template add riscvmc:memory@pc riscvmc:temp@temp.4 riscvmc:temp@temp.pc
 
-            data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMI
-            function bitops:sign_extend_32
-            data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
+            template sign_extend_32 riscvmc:memory@decode_map.IMMI
 
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage bitops:tmp b_digits set from storage mem:tmp data
-            function bitops:add
-            data modify storage bitops:tmp digits[31] set value 0b
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:temp@temp.t
+            template add riscvmc:temp@temp.t riscvmc:memory@decode_map.IMMI riscvmc:temp@temp.t2
+            data modify storage riscvmc:temp temp.t2[31] set value 0b
             
-            data modify storage riscvmc:memory pc set from storage bitops:tmp digits
-            
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            data modify storage mem:tmp data set from storage bitops:tmp temp
-            function mem:put_reg
+            data modify storage riscvmc:memory pc set from storage riscvmc:temp temp.t2
+
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:temp@temp.pc
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "BRANCH"}} run {
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage riscvmc:memory op.a set from storage mem:tmp data
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS2
-            function mem:get_reg
-            data modify storage riscvmc:memory op.b set from storage mem:tmp data
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:memory@op.a
+            template get_reg riscvmc:memory@decode_map.RS2 riscvmc:memory@op.b
+
             function *process_branch
             execute if data storage riscvmc:memory {op: {result: true}} run {
-                data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMB
-                function bitops:sign_extend_32
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
-                data modify storage bitops:tmp b_digits set from storage riscvmc:memory pc
-                function bitops:add
-                data modify storage riscvmc:memory pc set from storage bitops:tmp digits
+                template sign_extend_32 riscvmc:memory@decode_map.IMMB
+                data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
+                template add riscvmc:memory@decode_map.IMMB riscvmc:temp@temp.pc riscvmc:memory@pc
             } else run {
                 function *pc_add_4
             }
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "OP_IMM"}} run {
-            data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMI
-            function bitops:sign_extend_32
-            data modify storage riscvmc:memory op.b set from storage bitops:tmp digits
+            template sign_extend_32 riscvmc:memory@decode_map.IMMI
+            data modify storage riscvmc:memory op.b set from storage riscvmc:memory decode_map.IMMI
 
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage riscvmc:memory op.a set from storage mem:tmp data
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:memory@op.a
 
             function *process_arithmetic
 
-            data modify storage mem:tmp data set from storage riscvmc:memory op.result
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:memory@op.result
 
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "OP"}} run {
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage riscvmc:memory op.a set from storage mem:tmp data
-
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS2
-            function mem:get_reg
-            data modify storage riscvmc:memory op.b set from storage mem:tmp data
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:memory@op.a
+            template get_reg riscvmc:memory@decode_map.RS2 riscvmc:memory@op.b
 
             function *process_arithmetic
 
-            data modify storage mem:tmp data set from storage riscvmc:memory op.result
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:memory@op.result
 
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "LUI"}} run {
-            data modify storage mem:tmp data set from storage riscvmc:memory decode_map.IMMU
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:memory@decode_map.IMMU
 
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "AUIPC"}} run {
-            data modify storage bitops:tmp a_digits set from storage riscvmc:memory pc
-            data modify storage bitops:tmp b_digits set from storage riscvmc:memory decode_map.IMMU
-            function bitops:add
-            data modify storage mem:tmp data set from storage bitops:tmp digits
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template add riscvmc:memory@pc riscvmc:memory@decode_map.IMMU riscvmc:temp@temp.pc
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:temp@temp.pc
 
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "LOAD"}} run {
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage bitops:tmp a_digits set from storage mem:tmp data
-            data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMI
-            function bitops:sign_extend_32
-            data modify storage bitops:tmp b_digits set from storage bitops:tmp digits
-            function bitops:add
-            data modify storage bitops:tmp load.temp set from storage bitops:tmp digits
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:temp@temp.t
+            template sign_extend_32 riscvmc:memory@decode_map.IMMI
+            template add riscvmc:temp@temp.t riscvmc:memory@decode_map.IMMI riscvmc:temp@temp.load
 
             execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "W"}} run {
-                data modify storage bitops:tmp digits set from storage bitops:tmp load.temp
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
-
-                data modify storage riscvmc:memory load.data set value <% from_num(0, 32) %>
+                data modify storage riscvmc:temp temp.load_data set value <% from_num(0, 32) %>
 
                 REPEAT (3, 0) as i {
-                    data modify storage mem:tmp addr set from storage bitops:tmp digits
-                    data modify storage bitops:tmp load.temp set from storage bitops:tmp digits
-                    function mem:get
+                    template get riscvmc:temp@temp.load riscvmc:temp@temp.load_data_raw
 
                     REPEAT (7, 0) as j {
-                        data modify storage riscvmc:memory load.data[<% i * 8 + j %>] set from storage mem:tmp data[<%j%>]
+                        data modify storage riscvmc:temp temp.load_data[<% i * 8 + j %>] set from storage riscvmc:temp temp.load_data_raw[<%j%>]
                     }
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp load.temp
-                    function bitops:add
+                    IF (i != 0) {
+                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                    }
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "H"}} run {
-                data modify storage bitops:tmp digits set from storage bitops:tmp load.temp
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
-
-                data modify storage riscvmc:memory load.data set value <% from_num(0, 32) %>
+                data modify storage riscvmc:temp temp.load_data set value <% from_num(0, 32) %>
 
                 REPEAT (3, 2) as i {
-                    data modify storage mem:tmp addr set from storage bitops:tmp digits
-                    data modify storage bitops:tmp load.temp set from storage bitops:tmp digits
-                    function mem:get
+                    template get riscvmc:temp@temp.load riscvmc:temp@temp.load_data_raw
 
                     REPEAT (7, 0) as j {
-                        data modify storage riscvmc:memory load.data[<% i * 8 + j %>] set from storage mem:tmp data[<%j%>]
+                        data modify storage riscvmc:temp temp.load_data[<% i * 8 + j %>] set from storage riscvmc:temp temp.load_data_raw[<%j%>]
                     }
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp load.temp
-                    function bitops:add
+                    IF (i != 2) {
+                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                    }
                 }
 
                 REPEAT (0, 15) as i {
-                    data modify storage riscvmc:memory load.data[<%i%>] set from storage riscvmc:memory load.data[16]
+                    data modify storage riscvmc:temp temp.load_data[<%i%>] set from storage riscvmc:temp temp.load_data[16]
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "HU"}} run {
-                data modify storage bitops:tmp digits set from storage bitops:tmp load.temp
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
-
-                data modify storage riscvmc:memory load.data set value <% from_num(0, 32) %>
+                data modify storage riscvmc:temp temp.load_data set value <% from_num(0, 32) %>
 
                 REPEAT (3, 2) as i {
-                    data modify storage mem:tmp addr set from storage bitops:tmp digits
-                    data modify storage bitops:tmp load.temp set from storage bitops:tmp digits
-                    function mem:get
+                    template get riscvmc:temp@temp.load riscvmc:temp@temp.load_data_raw
 
                     REPEAT (7, 0) as j {
-                        data modify storage riscvmc:memory load.data[<% i * 8 + j %>] set from storage mem:tmp data[<%j%>]
+                        data modify storage riscvmc:temp temp.load_data[<% i * 8 + j %>] set from storage riscvmc:temp temp.load_data_raw[<%j%>]
                     }
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp load.temp
-                    function bitops:add
+                    IF (i != 2) {
+                        template add riscvmc:temp@temp.load riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                        data modify storage riscvmc:temp temp.load set from storage riscvmc:temp temp.t
+                    }
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "B"}} run {
-                data modify storage mem:tmp addr set from storage bitops:tmp load.temp
-                function mem:get
-
-                data modify storage riscvmc:memory load.data set value <% from_num(0, 32) %>
+                data modify storage riscvmc:temp temp.load_data set value <% from_num(0, 32) %>
+                template get riscvmc:temp@temp.load riscvmc:temp@temp.load_data_raw
 
                 REPEAT (0, 7) as i {
-                    data modify storage riscvmc:memory load.data[<% i + 24 %>] set from storage mem:tmp data[<%i%>]
+                    data modify storage riscvmc:temp temp.load_data[<% i + 24 %>] set from storage riscvmc:temp temp.load_data_raw[<%i%>]
                 }
 
                 REPEAT (0, 23) as i {
-                    data modify storage riscvmc:memory load.data[<% i %>] set from storage riscvmc:memory load.data[24]
+                    data modify storage riscvmc:temp temp.load_data[<% i %>] set from storage riscvmc:temp temp.load_data[24]
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "BU"}} run {
-                data modify storage mem:tmp addr set from storage bitops:tmp load.temp
-                function mem:get
-
-                data modify storage riscvmc:memory load.data set value <% from_num(0, 32) %>
+                data modify storage riscvmc:temp temp.load_data set value <% from_num(0, 32) %>
+                template get riscvmc:temp@temp.load riscvmc:temp@temp.load_data_raw
 
                 REPEAT (0, 7) as i {
-                    data modify storage riscvmc:memory load.data[<% i + 24 %>] set from storage mem:tmp data[<%i%>]
+                    data modify storage riscvmc:temp temp.load_data[<% i + 24 %>] set from storage riscvmc:temp temp.load_data_raw[<%i%>]
                 }
             } else run {
                 say Invalid FUNCT3_LOAD_STORE
                 scoreboard players set #running riscvmc 0
             }
 
-            data modify storage mem:tmp data set from storage riscvmc:memory load.data
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RD
-            function mem:put_reg
+            template put_reg riscvmc:memory@decode_map.RD riscvmc:temp@temp.load_data
 
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "STORE"}} run {
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS2
-            function mem:get_reg
-            data modify storage riscvmc:memory store.data set from storage mem:tmp data
+            template get_reg riscvmc:memory@decode_map.RS2 riscvmc:temp@temp.store_data
 
-            data modify storage mem:tmp id set from storage riscvmc:memory decode_map.RS1
-            function mem:get_reg
-            data modify storage bitops:tmp a_digits set from storage mem:tmp data
-            data modify storage bitops:tmp c_digits set from storage riscvmc:memory decode_map.IMMS
-            function bitops:sign_extend_32
-            data modify storage bitops:tmp b_digits set from storage bitops:tmp digits
-            function bitops:add
-            data modify storage bitops:tmp store.temp set from storage bitops:tmp digits
+            template get_reg riscvmc:memory@decode_map.RS1 riscvmc:temp@temp.t
+            template sign_extend_32 riscvmc:memory@decode_map.IMMS
+            template add riscvmc:temp@temp.t riscvmc:memory@decode_map.IMMS riscvmc:temp@temp.store
 
             execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "W"}} run {
-                data modify storage bitops:tmp digits set from storage bitops:tmp store.temp
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+                data modify storage riscvmc:temp temp.store_data_raw set value <% from_num(0, 8) %>
 
                 REPEAT (3, 0) as i {
-                    data modify storage mem:tmp addr set from storage bitops:tmp digits
-                    data modify storage bitops:tmp store.temp set from storage bitops:tmp digits
-
-                    data modify storage mem:tmp data set value <% from_num(0, 8) %>
-
                     REPEAT (7, 0) as j {
-                        data modify storage mem:tmp data[<%j%>] set from storage riscvmc:memory store.data[<% i * 8 + j %>]
+                        data modify storage riscvmc:temp temp.store_data_raw[<%j%>] set from storage riscvmc:temp temp.store_data[<% i * 8 + j %>]
                     }
 
-                    function mem:put
+                    template put riscvmc:temp@temp.store riscvmc:temp@temp.store_data_raw
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp store.temp
-                    function bitops:add
+                    template add riscvmc:temp@temp.store riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                    data modify storage riscvmc:temp temp.store set from storage riscvmc:temp temp.t
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "H"}} run {
-                data modify storage bitops:tmp digits set from storage bitops:tmp store.temp
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
+                data modify storage riscvmc:temp temp.store_data_raw set value <% from_num(0, 8) %>
 
                 REPEAT (3, 2) as i {
-                    data modify storage mem:tmp addr set from storage bitops:tmp digits
-                    data modify storage bitops:tmp store.temp set from storage bitops:tmp digits
-
-                    data modify storage mem:tmp data set value <% from_num(0, 8) %>
-
                     REPEAT (7, 0) as j {
-                        data modify storage mem:tmp data[<%j%>] set from storage riscvmc:memory store.data[<% i * 8 + j %>]
+                        data modify storage riscvmc:temp temp.store_data_raw[<%j%>] set from storage riscvmc:temp temp.store_data[<% i * 8 + j %>]
                     }
 
-                    function mem:put
+                    template put riscvmc:temp@temp.store riscvmc:temp@temp.store_data_raw
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp store.temp
-                    function bitops:add
+                    template add riscvmc:temp@temp.store riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                    data modify storage riscvmc:temp temp.store set from storage riscvmc:temp temp.t
                 }
             } else execute if data storage riscvmc:memory {decode_map_processed: {FUNCT3_LOAD_STORE: "B"}} run {
-                data modify storage mem:tmp addr set from storage bitops:tmp store.temp
-
-                data modify storage mem:tmp data set value <% from_num(0, 8) %>
+                data modify storage riscvmc:temp temp.store_data_raw set value <% from_num(0, 8) %>
 
                 REPEAT (0, 7) as i {
-                    data modify storage mem:tmp data[<%i%>] set from storage riscvmc:memory store.data[<% i + 24 %>]
+                    data modify storage riscvmc:temp temp.store_data_raw[<%i%>] set from storage riscvmc:temp temp.store_data[<% i + 24 %>]
                 }
 
-                function mem:put
+                template put riscvmc:temp@temp.store riscvmc:temp@temp.store_data_raw
             } else run {
                 say Invalid FUNCT3_LOAD_STORE
                 scoreboard players set #running riscvmc 0
@@ -693,136 +563,118 @@ function execute_inst {
             function *pc_add_4
         } else execute if data storage riscvmc:memory {decode_map_processed: {ECALL: true}} run {
             # a7
-            data modify storage bitops:tmp a_digits set from storage riscvmc:memory reg.10001
-            function bitops:to_str
+            template to_str 32 riscvmc:memory@reg.10001 riscvmc:temp@temp.a7_str
 
             REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93, SYS_run_command: 513, SYS_run_if: 514, SYS_place_block: 515}) as key, value {
-                execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
-                    data modify storage bitops:tmp ecall.type set value "<% key %>"
+                execute if data storage riscvmc:temp {temp: {a7_str: "<% from_num_to_binary_str(value, 32) %>"}} run {
+                    data modify storage riscvmc:temp ecall.type set value "<% key %>"
                 }
             }
 
-            execute if data storage bitops:tmp {ecall: {type: "SYS_write"}} run {
+            execute if data storage riscvmc:temp {ecall: {type: "SYS_write"}} run {
                 # a0
-                data modify storage bitops:tmp ecall.fd set from storage riscvmc:memory reg.01010
+                data modify storage riscvmc:temp ecall.fd set from storage riscvmc:memory reg.01010
                 # a1
-                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01011
+                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:memory reg.01011
                 # a2
-                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01100
+                data modify storage riscvmc:temp ecall.len set from storage riscvmc:memory reg.01100
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
-                function bitops:to_num
-                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+                template to_str 32 riscvmc:temp@ecall.fd riscvmc:temp@temp.a0_str
+                template to_num unsigned riscvmc:temp@ecall.len
+                scoreboard players operation #num riscvmc = #num bitops
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.fd
-                function bitops:to_str
-                execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(1, 32) %>"} run {
+                execute if data storage riscvmc:temp {temp: {a0_str: "<% from_num_to_binary_str(1, 32) %>"}} run {
                     scoreboard players set #i riscvmc 1
-                    data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
-                    data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
 
-                    block { with storage bitops:tmp
-                        $execute if score #i riscvmc matches ..$(temp_len) run {
-                            data modify storage mem:tmp addr set from storage bitops:tmp digits
-                            function mem:get
-                            data modify storage ascii:tmp digits set from storage mem:tmp data
+                    block {
+                        execute if score #i riscvmc <= #num riscvmc run {
+                            template get riscvmc:temp@ecall.buf ascii:tmp@digits
                             function ascii:process_digits
 
-                            data modify storage bitops:tmp a_digits set from storage mem:tmp addr
-                            function bitops:add
+                            template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                            data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
 
                             scoreboard players add #i riscvmc 1
-                            function ^1 with storage bitops:tmp
+                            function ^1
                         }
                     }
 
-                    data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp ecall.len
+                    data modify storage riscvmc:memory reg.01010 set from storage riscvmc:temp ecall.len
                 } else run {
                     say Invalid file descriptor in write ecall, ignored
                     # scoreboard players set #running riscvmc 0
                 }
-            }  else execute if data storage bitops:tmp {ecall: {type: "SYS_read"}} run {
+            } else execute if data storage riscvmc:temp {ecall: {type: "SYS_read"}} run {
                 # a0
-                data modify storage bitops:tmp ecall.fd set from storage riscvmc:memory reg.01010
+                data modify storage riscvmc:temp ecall.fd set from storage riscvmc:memory reg.01010
                 # a1
-                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01011
+                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:memory reg.01011
                 # a2
-                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01100
+                data modify storage riscvmc:temp ecall.len set from storage riscvmc:memory reg.01100
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
-                function bitops:to_num
-                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+                template to_str 32 riscvmc:temp@ecall.fd riscvmc:temp@temp.a0_str
+                template to_num unsigned riscvmc:temp@ecall.len
+                scoreboard players operation #num riscvmc = #num bitops
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.fd
-                function bitops:to_str
-                execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(0, 32) %>"} run {
+                execute if data storage riscvmc:temp {temp: {a0_str: "<% from_num_to_binary_str(0, 32) %>"}} run {
                     scoreboard players set #i riscvmc 1
-                    data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
-                    data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
 
-                    block { with storage bitops:tmp
-                        $execute if score #i riscvmc matches 1..$(temp_len) run {
+                    block {
+                        execute if score #i riscvmc <= #num riscvmc run {
                             function ascii:get_digits
 
                             execute if data storage ascii:tmp digits run {
-                                data modify storage mem:tmp addr set from storage bitops:tmp digits
-                                data modify storage mem:tmp data set from storage ascii:tmp digits
-                                function mem:put
+                                template put riscvmc:temp@ecall.buf ascii:tmp@digits
 
-                                data modify storage bitops:tmp a_digits set from storage mem:tmp addr
-                                function bitops:add
+                                template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
 
                                 scoreboard players add #i riscvmc 1
-                                function ^1 with storage bitops:tmp
+                                function ^1
                             }
                         }
                     }
 
                     scoreboard players operation #i riscvmc += #n1 riscvmc
-                    execute store result storage bitops:tmp int_num int 1 run scoreboard players get #i riscvmc
-                    function bitops:from_int
-
-                    data modify storage riscvmc:memory reg.01010 set from storage bitops:tmp digits
+                    execute store result storage riscvmc:temp ecall.ret_len int 1 run scoreboard players get #i riscvmc
+                    template from_int riscvmc:temp@ecall.ret_len riscvmc:memory@reg.01010
                 } else run {
                     say Invalid file descriptor in read ecall, ignored
                     # scoreboard players set #running riscvmc 0
                 }
-            } else execute if data storage bitops:tmp {ecall: {type: "SYS_exit"}} run {
-                data modify storage bitops:tmp ecall.status set from storage riscvmc:memory reg.01010
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.status
-                function bitops:to_num
-                block { with storage bitops:tmp
-                    $say Exiting with code $(num)
+            } else execute if data storage riscvmc:temp {ecall: {type: "SYS_exit"}} run {
+                data modify storage riscvmc:temp ecall.status set from storage riscvmc:memory reg.01010
+
+                template to_num unsigned riscvmc:temp@ecall.status
+                execute store result storage riscvmc:temp ecall.status_num int 1 run scoreboard players get #num bitops
+
+                block { with storage riscvmc:temp ecall
+                    $say Exiting with code $(status_num)
                 }
                 scoreboard players set #running riscvmc 0
-            } else execute if data storage bitops:tmp {ecall: {type: "SYS_run_command"}} run {
+            } else execute if data storage riscvmc:temp {ecall: {type: "SYS_run_command"}} run {
                 # a0
-                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01010
+                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:memory reg.01010
                 # a1
-                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01011
+                data modify storage riscvmc:temp ecall.len set from storage riscvmc:memory reg.01011
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
-                function bitops:to_num
-                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+                template to_num unsigned riscvmc:temp@ecall.len
+                scoreboard players operation #num riscvmc = #num bitops
 
                 scoreboard players set #i riscvmc 1
-                data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
 
                 function ascii:clear_inst_buffer
 
-                block { with storage bitops:tmp
-                    $execute if score #i riscvmc matches ..$(temp_len) run {
-                        data modify storage mem:tmp addr set from storage bitops:tmp digits
-                        function mem:get
-                        data modify storage ascii:tmp digits set from storage mem:tmp data
+                block {
+                    execute if score #i riscvmc <= #num riscvmc run {
+                        template get riscvmc:temp@ecall.buf ascii:tmp@digits
                         function ascii:process_digits_inst
 
-                        data modify storage bitops:tmp a_digits set from storage mem:tmp addr
-                        function bitops:add
+                        template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                        data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
 
                         scoreboard players add #i riscvmc 1
-                        function ^1 with storage bitops:tmp
+                        function ^1
                     }
                 }
 
@@ -831,42 +683,29 @@ function execute_inst {
                 }
 
                 function ascii:clear_inst_buffer
-            } else execute if data storage bitops:tmp {ecall: {type: "SYS_exit"}} run {
-                data modify storage bitops:tmp ecall.status set from storage riscvmc:memory reg.01010
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.status
-                function bitops:to_num
-                block { with storage bitops:tmp
-                    $say Exiting with code $(num)
-                }
-                scoreboard players set #running riscvmc 0
-            } else execute if data storage bitops:tmp {ecall: {type: "SYS_run_if"}} run {
+            } else execute if data storage riscvmc:temp {ecall: {type: "SYS_run_if"}} run {
                 # a0
-                data modify storage bitops:tmp ecall.buf set from storage riscvmc:memory reg.01010
+                data modify storage riscvmc:temp ecall.buf set from storage riscvmc:memory reg.01010
                 # a1
-                data modify storage bitops:tmp ecall.len set from storage riscvmc:memory reg.01011
+                data modify storage riscvmc:temp ecall.len set from storage riscvmc:memory reg.01011
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.len
-                function bitops:to_num
-                data modify storage bitops:tmp temp_len set from storage bitops:tmp num
+                template to_num unsigned riscvmc:temp@ecall.len
+                scoreboard players operation #num riscvmc = #num bitops
 
                 scoreboard players set #i riscvmc 1
-                data modify storage bitops:tmp digits set from storage bitops:tmp ecall.buf
-                data modify storage bitops:tmp b_digits set value <% from_num(1, 32) %>
 
                 function ascii:clear_inst_buffer
 
-                block { with storage bitops:tmp
-                    $execute if score #i riscvmc matches ..$(temp_len) run {
-                        data modify storage mem:tmp addr set from storage bitops:tmp digits
-                        function mem:get
-                        data modify storage ascii:tmp digits set from storage mem:tmp data
+                block {
+                    execute if score #i riscvmc <= #num riscvmc run {
+                        template get riscvmc:temp@ecall.buf ascii:tmp@digits
                         function ascii:process_digits_inst
 
-                        data modify storage bitops:tmp a_digits set from storage mem:tmp addr
-                        function bitops:add
+                        template add riscvmc:temp@ecall.buf riscvmc:temp@temp.1 riscvmc:temp@temp.t
+                        data modify storage riscvmc:temp ecall.buf set from storage riscvmc:temp temp.t
 
                         scoreboard players add #i riscvmc 1
-                        function ^1 with storage bitops:tmp
+                        function ^1
                     }
                 }
 
@@ -883,42 +722,38 @@ function execute_inst {
                 }
 
                 function ascii:clear_inst_buffer
-            } else execute if data storage bitops:tmp {ecall: {type: "SYS_place_block"}} run {
+            } else execute if data storage riscvmc:temp {ecall: {type: "SYS_place_block"}} run {
                 # a0
-                data modify storage bitops:tmp ecall.xa set from storage riscvmc:memory reg.01010
+                data modify storage riscvmc:temp ecall.xa set from storage riscvmc:memory reg.01010
                 # a1
-                data modify storage bitops:tmp ecall.ya set from storage riscvmc:memory reg.01011
+                data modify storage riscvmc:temp ecall.ya set from storage riscvmc:memory reg.01011
                 # a2
-                data modify storage bitops:tmp ecall.za set from storage riscvmc:memory reg.01100
+                data modify storage riscvmc:temp ecall.za set from storage riscvmc:memory reg.01100
                 # a3
-                data modify storage bitops:tmp ecall.block_id set from storage riscvmc:memory reg.01101
+                data modify storage riscvmc:temp ecall.block_id set from storage riscvmc:memory reg.01101
 
-                data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.block_id
-                function bitops:to_str
+                template to_str 32 riscvmc:temp@ecall.block_id riscvmc:temp@temp.a3_str
 
                 scoreboard players set #block_place_flag riscvmc 0
 
                 REPEAT ({air: 0, stone: 1, dirt: 2, birch_wood: 3}) as key, value {
-                    execute if data storage bitops:tmp {str: "<% from_num_to_binary_str(value, 32) %>"} run {
-                        data modify storage bitops:tmp ecall.block set value "<% key %>"
+                    execute if data storage riscvmc:temp {temp: {a3_str: "<% from_num_to_binary_str(value, 32) %>"}} run {
+                        data modify storage riscvmc:temp ecall.block set value "<% key %>"
                         scoreboard players set #block_place_flag riscvmc 1
                     }
                 }
 
                 execute if score #block_place_flag riscvmc matches 1 run {
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.xa
-                    function bitops:to_num
-                    data modify storage bitops:tmp ecall.x set from storage bitops:tmp num
+                    template to_num unsigned riscvmc:temp@ecall.xa
+                    execute store result storage riscvmc:temp ecall.x int 1 run scoreboard players get #num bitops
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.ya
-                    function bitops:to_num
-                    data modify storage bitops:tmp ecall.y set from storage bitops:tmp num
+                    template to_num unsigned riscvmc:temp@ecall.ya
+                    execute store result storage riscvmc:temp ecall.y int 1 run scoreboard players get #num bitops
 
-                    data modify storage bitops:tmp a_digits set from storage bitops:tmp ecall.za
-                    function bitops:to_num
-                    data modify storage bitops:tmp ecall.z set from storage bitops:tmp num
+                    template to_num unsigned riscvmc:temp@ecall.za
+                    execute store result storage riscvmc:temp ecall.z int 1 run scoreboard players get #num bitops
 
-                    block { with storage bitops:tmp ecall
+                    block { with storage riscvmc:temp ecall
                         $setblock $(x) $(y) $(z) $(block)
                     }
                 } else run {
@@ -947,20 +782,21 @@ function step {
 function debug_step {
     function *step
 
-    data modify storage riscvmc:debug pc set from storage riscvmc:memory pc
     data modify storage riscvmc:debug decode_map set from storage riscvmc:memory decode_map
     data modify storage riscvmc:debug decode_map_processed set from storage riscvmc:memory decode_map_processed
     data modify storage riscvmc:debug reg set from storage riscvmc:memory reg
 
-    data modify storage bitops:tmp a_digits set from storage riscvmc:debug pc
-    function bitops:to_hex_str
-    data modify storage riscvmc:debug pc set from storage bitops:tmp str
+    template to_hex_str riscvmc:memory@pc riscvmc:debug@pc
 
     REPEAT (0, 31) as i {
         execute if data storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %> run {
-            data modify storage bitops:tmp a_digits set from storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %>
-            function bitops:to_hex_str
-            data modify storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %> set from storage bitops:tmp str
+            template to_hex_str <% "riscvmc:memory@reg." + from_num_to_binary_str(i,5) %> <%"riscvmc:debug@reg." + from_num_to_binary_str(i,5) %>
+
+            template get_array_length <% "riscvmc:memory@reg." + from_num_to_binary_str(i,5) %> riscvmc:debug@temp.reg_len
+            execute unless data storage riscvmc:debug {temp: {reg_len: 32}} run {
+                say Invalid length of register <% from_num_to_binary_str(i,5) %>
+                scoreboard players set #running riscvmc 0
+            }
         } else run {
             data modify storage riscvmc:debug reg.<% from_num_to_binary_str(i, 5) %> set value "00000000"
         }

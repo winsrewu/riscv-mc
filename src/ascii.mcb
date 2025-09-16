@@ -1,5 +1,7 @@
 import ./ascii_to_binary.js
 import ./num_to_binary_array.js
+import ./argument_parser.js
+import ./bitopst.mcbt
 
 # control characters are all ignored, except for \n and \t
 # \n will flush the buffer and call 'say' command once
@@ -23,17 +25,18 @@ function onload minecraft:load {
 # result:
 # -
 function process_digits {
-    data modify storage bitops:tmp c_digits set from storage ascii:tmp digits
-    function bitops:left_pad_32
-    data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
-    function bitops:to_num
+    template left_pad_32 ascii:tmp@digits
+    template to_num unsigned ascii:tmp@digits
+
+    execute store result storage ascii:tmp num int 1 run scoreboard players get #num bitops
+
     REPEAT (0, 255) as i {
         IF i == 10 {
-            execute if data storage bitops:tmp {num: 10L} run {
+            execute if data storage ascii:tmp {num: 10} run {
                 function *flush_buffer
             }
         } ELSE {
-            execute if data storage bitops:tmp {num: <%i%>L} run { with storage ascii:tmp
+            execute if data storage ascii:tmp {num: <%i%>} run { with storage ascii:tmp
                 $data modify storage ascii:tmp buffer set value "$(buffer)<% get_should_print(i) %>"
             }
         }
@@ -47,12 +50,13 @@ function process_digits {
 # result:
 # -
 function process_digits_inst {
-    data modify storage bitops:tmp c_digits set from storage ascii:tmp digits
-    function bitops:left_pad_32
-    data modify storage bitops:tmp a_digits set from storage bitops:tmp digits
-    function bitops:to_num
+    template left_pad_32 ascii:tmp@digits
+    template to_num unsigned ascii:tmp@digits
+
+    execute store result storage ascii:tmp num int 1 run scoreboard players get #num bitops
+
     REPEAT (0, 255) as i {
-        execute if data storage bitops:tmp {num: <%i%>L} run { with storage ascii:tmp
+        execute if data storage ascii:tmp {num: <%i%>} run { with storage ascii:tmp
             $data modify storage ascii:tmp inst_buffer set value "$(inst_buffer)<% get_should_print(i) %>"
         }
     }
