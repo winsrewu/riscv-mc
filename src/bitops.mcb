@@ -9,7 +9,7 @@ import ./num_to_binary_array.js
 # unless it is marked as "NOT 32-bit"
 # !!!
 
-function onload minecraft:onload {
+function onload minecraft:load {
     scoreboard objectives add bitops dummy
 
     REPEAT (0, 30) as i {

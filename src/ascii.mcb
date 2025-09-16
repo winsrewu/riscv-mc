@@ -9,7 +9,7 @@ import ./num_to_binary_array.js
 # other chars will be replaced by '?'
 # for instant buffer, \n will be ignored
 
-function onload minecraft:onload {
+function onload minecraft:load {
     data modify storage ascii:tmp buffer set value ""
     data modify storage ascii:tmp input_buffer set value ""
     data modify storage ascii:tmp inst_buffer set value ""

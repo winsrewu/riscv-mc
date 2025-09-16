@@ -1,6 +1,6 @@
 import ./num_to_binary_array.js
 
-function onload minecraft:onload {
+function onload minecraft:load {
     scoreboard objectives add riscvmc dummy
     scoreboard objectives add mcb.interal dummy
 

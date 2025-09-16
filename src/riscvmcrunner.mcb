@@ -1,4 +1,4 @@
-function onload minecraft:onload {
+function onload minecraft:load {
     scoreboard objectives add riscvmctest dummy
 }
 
