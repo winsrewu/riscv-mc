@@ -8,7 +8,8 @@
 类似的仓库 https://github.com/SuperTails/riscvcraft 但是支持 rv32ima. 该作者也有对 llvm / wasm 的mc数据包支持。
 
 # Performance
-**1.1k** 命令 (Command) 每指令 (Instruction)。
+当解码表缓存命中时平均 **1.1k** 命令 (Command) 每指令 (Instruction)。
+其他情况下平均 5k 命令每指令。
 
 # 使用方法
 ### 编译数据包

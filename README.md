@@ -8,7 +8,8 @@ This datapack is built using https://mcbuild.dev.
 Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This author also have llvm / wasm support for mc datapack.
 
 # Performance
-**1.1k** commands per instruction
+**1.1k** commands per instruction on average with decode_map cache hit.  
+5k commands per instruction on average otherwise.
 
 # Usage
 ### Compiling the datapack
