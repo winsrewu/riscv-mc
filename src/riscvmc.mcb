@@ -218,7 +218,7 @@ function _decode_inst {
     # FENCE: 00011
     REPEAT ({LUI: "[0b,1b,1b,0b,1b]", AUIPC: "[0b,0b,1b,0b,1b]", JAL: "[1b,1b,0b,1b,1b]", JALR: "[1b,1b,0b,0b,1b]", BRANCH: "[1b,1b,0b,0b,0b]", OP_IMM: "[0b,0b,1b,0b,0b]", OP: "[0b,1b,1b,0b,0b]", LOAD: "[0b,0b,0b,0b,0b]", STORE: "[0b,1b,0b,0b,0b]", FENCE: "[0b,0b,0b,1b,1b]"}) as key, value {
         data modify storage riscvmc:temp temp.eq set value <%value%>
-        template equal_not_32 riscvmc:temp@temp.OPCODE riscvmc:memory@decode_map.OPCODE
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map.OPCODE
 
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.OPCODE set value <%key%>
     }
@@ -236,7 +236,7 @@ function _decode_inst {
     # AND: 111
     REPEAT ({ADD: "[0b,0b,0b]", SLL: "[0b,0b,1b]", SRL: "[1b,0b,1b]", SLT: "[0b,1b,0b]", SLTU: "[0b,1b,1b]", XOR: "[1b,0b,0b]", OR: "[1b,1b,0b]", AND: "[1b,1b,1b]"}) as key, value {
         data modify storage riscvmc:temp temp.eq set value <% value %>
-        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_OP_IMM_OP set value <%key%>
     }
 
@@ -249,7 +249,7 @@ function _decode_inst {
     # BGEU: 111
     REPEAT ({BEQ: "[0b,0b,0b]", BNE: "[0b,0b,1b]", BLT: "[1b,0b,0b]", BGE: "[1b,0b,1b]", BLTU: "[1b,1b,0b]", BGEU: "[1b,1b,1b]"}) as key, value {
         data modify storage riscvmc:temp temp.eq set value <% value %>
-        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_BRANCH set value <%key%>
     }
 
@@ -261,7 +261,7 @@ function _decode_inst {
     # HU: 101
     REPEAT ({B: "[0b,0b,0b]", H: "[0b,0b,1b]", W: "[0b,1b,0b]", BU: "[1b,0b,0b]", HU: "[1b,0b,1b]"}) as key, value {
         data modify storage riscvmc:temp temp.eq set value <% value %>
-        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map_processed.FUNCT3
+        template equal_not_32 riscvmc:temp@temp.eq riscvmc:memory@decode_map.FUNCT3
         execute if score #flag bitops matches 1 run data modify storage riscvmc:memory decode_map_processed.FUNCT3_LOAD_STORE set value <%key%>
     }
 
