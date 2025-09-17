@@ -5,7 +5,7 @@ import ./memt.mcbt
 
 function onload minecraft:load {
     scoreboard objectives add riscvmc dummy
-    scoreboard objectives add mcb.interal dummy
+    scoreboard objectives add mcb.internal dummy
 
     data modify storage riscvmc:temp temp.CODECLASS set value [1b, 1b]
 
@@ -368,14 +368,14 @@ function process_arithmetic {
 function execute_inst {
     execute if data storage riscvmc:memory {decode_map_processed: {CODECLASS: true}} run {
         execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "JAL"}} run {
-            template add riscvmc:memory@pc riscvmc:temp@temp.4 riscvmc:temp@temp.pc
+            data modify storage riscvmc:temp temp.pc set from storage riscvmc:temp temp.pc_a4
             template put_reg riscvmc:memory@decode_map.RD riscvmc:temp@temp.pc
 
             template sign_extend_32 riscvmc:memory@decode_map.IMMJ
             data modify storage riscvmc:temp temp.pc set from storage riscvmc:memory pc
             template add riscvmc:memory@decode_map.IMMJ riscvmc:temp@temp.pc riscvmc:memory@pc
         } else execute if data storage riscvmc:memory {decode_map_processed: {OPCODE: "JALR"}} run {
-            template add riscvmc:memory@pc riscvmc:temp@temp.4 riscvmc:temp@temp.pc
+            data modify storage riscvmc:temp temp.pc set from storage riscvmc:temp temp.pc_a4
 
             template sign_extend_32 riscvmc:memory@decode_map.IMMI
 
