@@ -50,6 +50,8 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 - I have provided a systemcalls.c in the python emulator.
 - There do have some problems, like invaild file descriptor. I dont know why, i tried it on spike and the result is the same. But most of code works fine.
 - I think I won't support privileged architecture.
+- You need a really high command limit to run the program, this datapack won't modify this limit. So do ```/gamerule maxCommandChainLength 10000000``` yourself.
+- memory load (app.mcfunction) and decode_map load (decode_map.mcfunction) will print a message when they are finished.
 
 # Troubleshooting
 If your program breaks, you can use the riscvmctester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
