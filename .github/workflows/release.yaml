@@ -17,7 +17,7 @@ jobs:
       - name: Build project
         run: mcb build
       - name: Package
-        run: zip -r riscvmc.zip data/ LICENSE pack.mcmeta
+        run: zip -q -r riscvmc.zip data/ LICENSE pack.mcmeta
       - name: Upload release assets
         uses: actions/upload-release-asset@v1
         env:
