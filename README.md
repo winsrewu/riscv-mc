@@ -20,7 +20,8 @@ Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This aut
 
 ### Compiling the program
 1. You may need RISC-V toolchain to compile the program. Good to know that I had create a fork at https://github.com/winsrewu/rv32i-gnu-toolchain, you can directly use that workflow to compile the toolchain.
-2. Run c/build.sh to compile the program, this should generate a .mem file and copy it to python/ folder, and call a python script to generate a .mcfunction file, which will be copied to data/loader.
+2. Run c/build.sh {program_name} to compile the program, this should generate a .mem file and copy it to python/ folder, and call a python script to generate a .mcfunction file, which will be copied to data/loader.
+Please notice that the global pointer is really easy to fail, you may need to adjust it manually for different programs. I wrote two link scripts in pyriscv, but you may need to modify them on your own or disable global pointer via ``-Wl,--no-relax-gp`` option.
 
 
 ### Running the program

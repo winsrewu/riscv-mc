@@ -20,7 +20,8 @@
 
 ### 编译程序
 1. 你可能需要 RISC-V 工具链来编译程序。我创建了一个分支：https://github.com/winsrewu/rv32i-gnu-toolchain ，你可以直接使用其中的工作流来编译工具链。
-2. 运行 c/build.sh 来编译程序，这将生成一个 .mem 文件并复制到 python/ 文件夹，然后调用一个 Python 脚本生成 .mcfunction 文件，该文件将被复制到 data/loader 目录。
+2. 运行 c/build.sh {程序名称} 来编译程序，这将生成一个 .mem 文件并复制到 python/ 文件夹，然后调用一个 Python 脚本生成 .mcfunction 文件，该文件将被复制到 data/loader 目录。
+请知晓, 全局指针可能很容易失败，你可能需要手动调整它以适应不同的程序。在pyriscv中，我准备了两个版本的连接脚本，当然你也有可能要自己修改或者是使用``-Wl,--no-relax-gp``来禁用全局指针。
 
 ### 运行程序
 1. 加载数据包后，运行你的 `loader:app.mcfunction` 来加载程序。
