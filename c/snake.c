@@ -113,7 +113,7 @@ SnakeNode *create_node(int x, int y)
 }
 
 // Initialize snake (length 3, start near center facing right)
-__attribute__((optimize("O0"))) void init_snake()
+void init_snake()
 {
     int start_x = MAP_W / 2 - 2;
     int start_y = MAP_H / 2;
