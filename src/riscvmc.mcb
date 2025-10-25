@@ -52,10 +52,10 @@ function set_running {
     scoreboard players set #running riscvmc 1
 }
 
-# reset pc to 0x80000000
+# reset pc to 0x0
 # remove all registers and memory
 function reset {
-    data modify storage riscvmc:memory pc set value <% from_num(0x80000000, 32) %>
+    data modify storage riscvmc:memory pc set value <% from_num(0x0, 32) %>
     function mem:remove_reg
     function mem:remove_memory
 

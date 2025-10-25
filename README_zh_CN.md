@@ -44,7 +44,7 @@
 ```
 /data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
 ```
-- 程序入口点在 0x80000000, 但是你可以更改
+- 程序入口点在 0x0, 但是你可以更改
 - 我在python模拟器内提供了 systemcalls.c
 - 存在一些问题，例如无效的文件描述符。我不清楚原因，我在 spike 上尝试过，结果也是一样的。但大部分代码都能正常工作。
 - 我想我不会支持特权架构。

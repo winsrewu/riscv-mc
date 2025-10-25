@@ -46,7 +46,7 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 ```
 /data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
 ```
-- The entry point of the program is hardcoded to 0x80000000, but you can change it.
+- The entry point of the program is hardcoded to 0x0, but you can change it.
 - I have provided a systemcalls.c in the python emulator.
 - There do have some problems, like invaild file descriptor. I dont know why, i tried it on spike and the result is the same. But most of code works fine.
 - I think I won't support privileged architecture.
