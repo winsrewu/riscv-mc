@@ -557,6 +557,8 @@ function execute_inst {
             # a7
             template to_str 32 riscvmc:memory@reg.10001 riscvmc:temp@temp.a7_str
 
+            data modify storage riscvmc:temp ecall.type set value "none"
+
             REPEAT ({SYS_read: 63, SYS_write: 64, SYS_exit: 93, SYS_run_command: 513, SYS_run_if: 514, SYS_place_block: 515}) as key, value {
                 execute if data storage riscvmc:temp {temp: {a7_str: "<% from_num_to_binary_str(value, 32) %>"}} run {
                     data modify storage riscvmc:temp ecall.type set value "<% key %>"
