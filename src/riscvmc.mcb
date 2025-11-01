@@ -597,8 +597,8 @@ function execute_inst {
 
                     data modify storage riscvmc:memory reg.01010 set from storage riscvmc:temp ecall.len
                 } else run {
-                    say Invalid file descriptor in write ecall, ignored
-                    # scoreboard players set #running riscvmc 0
+                    say Invalid file descriptor in write ecall
+                    scoreboard players set #running riscvmc 0
                 }
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_read"}} run {
                 # a0
@@ -777,8 +777,8 @@ function step {
                 execute store result storage riscvmc:temp ecall.ret_len int 1 run scoreboard players get #i riscvmc
                 template from_int riscvmc:temp@ecall.ret_len riscvmc:memory@reg.01010
             } else run {
-                say Invalid file descriptor in read ecall, ignored
-                # scoreboard players set #running riscvmc 0
+                say Invalid file descriptor in read ecall
+                scoreboard players set #running riscvmc 0
             }
 
             scoreboard players set #read_ecall riscvmc 0
