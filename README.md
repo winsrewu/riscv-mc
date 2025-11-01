@@ -47,9 +47,9 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 # Good to know
 - Python emulator: https://github.com/winsrewu/pyriscv, i think they have the same behavior.
 - The output is buffered until a \n is encountered.
-- You can use scanf. But the read action is not blocking, so you must set the ascii tmp like this before running the program:
+- You can use scanf. The read action is blocking. You can set the ascii tmp like this:
 ```
-/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
+/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!\n"
 ```
 - The entry point of the program is hardcoded to 0x0, but you can change it.
 - I have provided a systemcalls.c in the python emulator.

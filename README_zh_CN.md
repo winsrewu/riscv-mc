@@ -44,9 +44,9 @@
 # 注意事项
 - Python 模拟器：https://github.com/winsrewu/pyriscv ，我认为它们行为一致。
 - 输出内容会被缓冲，直到遇到换行符 `\n` 才会显示。
-- 你可以使用 scanf。但读取操作是非阻塞的，因此在运行程序前，你必须像这样设置 ascii tmp：
+- 你可以使用 scanf。读取操作是阻塞的。你可以像这样设置 ascii tmp：
 ```
-/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!"
+/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!\n"
 ```
 - 程序入口点在 0x0, 但是你可以更改
 - 我在python模拟器内提供了 systemcalls.c

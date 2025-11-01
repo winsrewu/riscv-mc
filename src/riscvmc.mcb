@@ -52,9 +52,9 @@ function set_running {
     scoreboard players set #running riscvmc 1
 }
 
-# reset pc to 0x0
-# remove all registers and memory
 function reset {
+    # reset pc to 0x0
+    # remove all registers and memory
     data modify storage riscvmc:memory pc set value <% from_num(0x0, 32) %>
     function mem:remove_reg
     function mem:remove_memory
@@ -62,6 +62,9 @@ function reset {
     # remove pregenerated decode_map
     data remove storage riscvmc:decode_map i
     data remove storage riscvmc:decode_map ip
+
+    # reset ecall status
+    scoreboard players set #read_ecall riscvmc 0
 }
 
 function pc_add_4 {
@@ -609,31 +612,9 @@ function execute_inst {
                 template to_num unsigned riscvmc:temp@ecall.len
                 scoreboard players operation #num riscvmc = #num bitops
 
-                execute if data storage riscvmc:temp {temp: {a0_str: "<% from_num_to_binary_str(0, 32) %>"}} run {
-                    scoreboard players set #i riscvmc 1
-
-                    block {
-                        execute if score #i riscvmc <= #num riscvmc run {
-                            function ascii:get_digits
-
-                            execute if data storage ascii:tmp digits run {
-                                template put riscvmc:temp@ecall.buf ascii:tmp@digits
-
-                                template add_1 riscvmc:temp@ecall.buf
-
-                                scoreboard players add #i riscvmc 1
-                                function ^1
-                            }
-                        }
-                    }
-
-                    scoreboard players operation #i riscvmc += #n1 riscvmc
-                    execute store result storage riscvmc:temp ecall.ret_len int 1 run scoreboard players get #i riscvmc
-                    template from_int riscvmc:temp@ecall.ret_len riscvmc:memory@reg.01010
-                } else run {
-                    say Invalid file descriptor in read ecall, ignored
-                    # scoreboard players set #running riscvmc 0
-                }
+                # handle in the beginning of step function
+                # to make it block.
+                scoreboard players set #read_ecall riscvmc 1
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_exit"}} run {
                 data modify storage riscvmc:temp ecall.status set from storage riscvmc:memory reg.01010
 
@@ -768,6 +749,46 @@ function execute_inst {
 }
 
 function step {
+    execute if score #read_ecall riscvmc matches 1 run {
+        function ascii:is_input_buffer_empty
+
+        execute if data storage ascii:tmp {digits: 1} run {
+            # if empty, block until input
+            # not empty:
+            execute if data storage riscvmc:temp {temp: {a0_str: "<% from_num_to_binary_str(0, 32) %>"}} run {
+                scoreboard players set #i riscvmc 1
+
+                block {
+                    execute if score #i riscvmc <= #num riscvmc run {
+                        function ascii:get_digits
+
+                        execute if data storage ascii:tmp digits run {
+                            template put riscvmc:temp@ecall.buf ascii:tmp@digits
+
+                            template add_1 riscvmc:temp@ecall.buf
+
+                            scoreboard players add #i riscvmc 1
+                            function ^1
+                        }
+                    }
+                }
+
+                scoreboard players operation #i riscvmc += #n1 riscvmc
+                execute store result storage riscvmc:temp ecall.ret_len int 1 run scoreboard players get #i riscvmc
+                template from_int riscvmc:temp@ecall.ret_len riscvmc:memory@reg.01010
+            } else run {
+                say Invalid file descriptor in read ecall, ignored
+                # scoreboard players set #running riscvmc 0
+            }
+
+            scoreboard players set #read_ecall riscvmc 0
+        }
+    } else run {
+        function *_step
+    }
+}
+
+function _step {
     function *fetch_inst
     function *decode_inst
     function *execute_inst
