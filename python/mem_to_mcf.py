@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 from num_to_binary_array import *
 
 import sys
@@ -29,28 +30,27 @@ decode_map_len["IMMU"] = 32
 
 
 # read_mem.py
-def parse_mem_file(filename):
+def parse_mem_file(f: TextIOWrapper):
     memory = {}  # dict：address (int) -> byte (int)
     current_address = None
 
-    with open(filename, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
+    for line in f:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
 
-            if line.startswith("@"):
-                addr_hex = line[1:].strip()
-                current_address = int(addr_hex, 16)
-            else:
-                bytes_hex = line.split()
-                for byte_hex in bytes_hex:
-                    if not byte_hex:
-                        continue
-                    byte_val = int(byte_hex, 16)
-                    memory[current_address] = byte_val
-                    memory_available[current_address] = True
-                    current_address += 1
+        if line.startswith("@"):
+            addr_hex = line[1:].strip()
+            current_address = int(addr_hex, 16)
+        else:
+            bytes_hex = line.split()
+            for byte_hex in bytes_hex:
+                if not byte_hex:
+                    continue
+                byte_val = int(byte_hex, 16)
+                memory[current_address] = byte_val
+                memory_available[current_address] = True
+                current_address += 1
 
     return memory
 
@@ -58,7 +58,7 @@ def parse_mem_file(filename):
 inst_map = {}
 
 
-def pre_generate_decode_map(emulator):
+def pre_generate_decode_map(emulator, f: TextIOWrapper):
     for k, v in memory_available.items():
         # check if all 32 bits are available
         if k % 4 != 0:
@@ -140,19 +140,18 @@ def pre_generate_decode_map(emulator):
             str(decode_map_raw_output).replace("'", ""),
         )
 
-    with open("decode_map.mcfunction", "w") as f:
-        for k, v in inst_map.items():
-            f.write(f"data modify storage riscvmc:decode_map ip.{k} set value {v[0]}\n")
-            f.write(f"data modify storage riscvmc:decode_map i.{k} set value {v[1]}\n")
-        f.write("say decode map loaded!")
+    for k, v in inst_map.items():
+        f.write(f"data modify storage riscvmc:decode_map ip.{k} set value {v[0]}\n")
+        f.write(f"data modify storage riscvmc:decode_map i.{k} set value {v[1]}\n")
+    f.write("say decode map loaded!")
 
 
 def main():
     filename = "app.mem"
-    memory = parse_mem_file(filename)
+    memory = parse_mem_file(open(filename, "r"))
 
     emulator = PyRiscv(PyMEM(filename))
-    pre_generate_decode_map(emulator)
+    pre_generate_decode_map(emulator, open("decode_map.mcfunction", "w"))
 
     with open("app.mcfunction", "w") as f:
         for addr in sorted(memory.keys()):

@@ -22,6 +22,8 @@ Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This aut
 1. You may need RISC-V toolchain to compile the program. Good to know that I had create a fork at https://github.com/winsrewu/rv32i-gnu-toolchain, you can directly use that workflow to compile the toolchain.
 2. Run c/build.sh {program_name} to compile the program, this should generate a .mem file and copy it to python/ folder, and call a python script to generate a .mcfunction file, which will be copied to data/loader.
 Please notice that the global pointer is really easy to fail, you may need to adjust it manually for different programs. I wrote two link scripts in pyriscv, but you may need to modify them on your own or disable global pointer via ``-Wl,--no-relax-gp`` option.
+3. If you want to load from a dump file (See [Python emulator](https://github.com/winsrewu/pyriscv)),
+you need to use `dump_to_mcf.py` instead of `mem_to_mcf.py`.
 
 
 ### Running the program
@@ -29,9 +31,11 @@ Please notice that the global pointer is really easy to fail, you may need to ad
 2. If you had runned before, do
 ```
 /function riscvmc:reset
-# reset memory, pc, regs
+# reset memory, pc, regs, if you are loading from a dump file, don't do this, it will be done in app.mcfunction
 /function <your app.mcfunction>
 # load memory again, in case of it being modified by the program
+/function <your decode_map>
+# optional, if you have generated a decode_map
 /function riscvmc:set_running
 # set running flag to true
 ```

@@ -8,5 +8,6 @@ python/pc.mcfunction
 
 *app.mem
 *app.elf
+*dump.txt
 
 .vscode

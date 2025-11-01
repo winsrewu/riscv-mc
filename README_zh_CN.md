@@ -22,17 +22,20 @@
 1. 你可能需要 RISC-V 工具链来编译程序。我创建了一个分支：https://github.com/winsrewu/rv32i-gnu-toolchain ，你可以直接使用其中的工作流来编译工具链。
 2. 运行 c/build.sh {程序名称} 来编译程序，这将生成一个 .mem 文件并复制到 python/ 文件夹，然后调用一个 Python 脚本生成 .mcfunction 文件，该文件将被复制到 data/loader 目录。
 请知晓, 全局指针可能很容易失败，你可能需要手动调整它以适应不同的程序。在pyriscv中，我准备了两个版本的连接脚本，当然你也有可能要自己修改或者是使用``-Wl,--no-relax-gp``来禁用全局指针。
+3. 如果你想要从一个转储文件加载（参见 [Python 模拟器](https://github.com/winsrewu/pyriscv)），你需要使用 `dump_to_mcf.py` 而不是 `mem_to_mcf.py`。
 
 ### 运行程序
 1. 加载数据包后，运行你的 `loader:app.mcfunction` 来加载程序。
 2. 如果你之前运行过其他程序，请先执行以下命令重置状态：
 ```
 /function riscvmc:reset
-# reset memory, pc, regs
-/function <your app.mcfunction>
-# load memory again, in case of it being modified by the program
+# 重置内存、PC和寄存器，如果你是从转储文件加载，不要执行这一步，因为这一步会在 app.mcfunction 中完成
+/function <你的 app.mcfunction>
+# 重新加载内存，以防被程序修改
+/function <你的 decode_map>
+# 可选的，如果你已经生成了 decode_map
 /function riscvmc:set_running
-# set running flag to true
+# 将运行标志设置为 true
 ```
 3. 通过多次执行 `/function riscvmcrunner:tick50` 来运行程序。  
 每次执行将模拟 50 条指令。请注意，Minecraft 每 tick 有命令数限制，因此不宜一次运行过多。
