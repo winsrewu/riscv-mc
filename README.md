@@ -87,4 +87,6 @@ If your program breaks, you can use the riscvmctester, where you can import a co
 - run_if: run /execute if data storage riscvmc:if $(buffer) run ..., if test passed, return 1, else return 0.
 
 # TODO
+I need help :sob:
 - [ ] Optimizing
+- [ ] Extended instruction set support
