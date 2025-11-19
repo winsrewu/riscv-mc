@@ -31,14 +31,8 @@ function process_digits {
     execute store result storage riscvmc_ascii_buffer:temp num int 1 run scoreboard players get #num bitops
 
     REPEAT (0, 255) as i {
-        IF i == 10 {
-            execute if data storage riscvmc_ascii_buffer:temp {num: 10} run {
-                function *flush_buffer
-            }
-        } ELSE {
-            execute if data storage riscvmc_ascii_buffer:temp {num: <%i%>} run { with storage riscvmc_ascii_buffer:temp
-                $data modify storage riscvmc_ascii_buffer:temp buffer set value "$(buffer)<% get_should_print(i) %>"
-            }
+        execute if data storage riscvmc_ascii_buffer:temp {num: <%i%>} run { with storage riscvmc_ascii_buffer:temp
+            $data modify storage riscvmc_ascii_buffer:temp buffer set value "$(buffer)<% get_should_print(i) %>"
         }
     }
 }
@@ -64,13 +58,6 @@ function process_digits_inst {
 
 function clear_inst_buffer {
     data modify storage riscvmc_ascii_buffer:temp inst_buffer set value ""
-}
-
-function flush_buffer {
-    block { with storage riscvmc_ascii_buffer:temp
-        $say $(buffer)
-    }
-    data modify storage riscvmc_ascii_buffer:temp buffer set value ""
 }
 
 # tmp example:

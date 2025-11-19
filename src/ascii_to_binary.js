@@ -8,6 +8,7 @@ function get_corresponding_char(num) {
 
 function get_should_print(num) {
     let c = num;
+    if (c == 10) return "\\n";
     if (c == 9) return "    ";
     if (c < 32 || c == 126) return "";
     if (c > 126) return "?";

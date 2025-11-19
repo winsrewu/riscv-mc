@@ -625,9 +625,6 @@ function execute_inst {
                     $say Exiting with code $(status_num)
                 }
 
-                # flush output buffer
-                function riscvmc_ascii_buffer:flush_buffer
-
                 scoreboard players set #running riscvmc 0
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_run_command"}} run {
                 # a0
