@@ -72,18 +72,8 @@ function get_digits {
     execute unless data storage riscvmc_ascii_buffer:temp {input_buffer: ""} run {
         data modify storage riscvmc_ascii_buffer:temp ch set string storage riscvmc_ascii_buffer:temp input_buffer 0 1
         REPEAT (0, 255) as i {
-            IF is_printable(i) && is_legal(i) {
-                execute if data storage riscvmc_ascii_buffer:temp {ch: "<% get_corresponding_char(i) %>"} run {
-                    data modify storage riscvmc_ascii_buffer:temp digits set value <% from_num(i, 8) %>
-                }
-            }
-            IF is_printable(i) && !is_legal(i) {
-                execute if data storage riscvmc_ascii_buffer:temp {ch: "\<% get_corresponding_char(i) %>"} run {
-                    data modify storage riscvmc_ascii_buffer:temp digits set value <% from_num(i, 8) %>
-                } 
-            }
-            IF i == 10 {
-                execute if data storage riscvmc_ascii_buffer:temp {ch: "\n"} run {
+            IF is_printable(i) {
+                execute if data storage riscvmc_ascii_buffer:temp {ch: "<% get_should_print(i) %>"} run {
                     data modify storage riscvmc_ascii_buffer:temp digits set value <% from_num(i, 8) %>
                 }
             }
