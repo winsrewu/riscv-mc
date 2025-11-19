@@ -69,7 +69,7 @@
 | 514  | run_if       | ptr, len      | if 语句结果，0 或 1 |
 | 515    | place_block | x, y, z, block_type | - |
 
-# block types
+# 方块类型
 | id | name |
 |----|------|
 | 0  | air  |

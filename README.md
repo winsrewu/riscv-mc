@@ -61,7 +61,7 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 # Troubleshooting
 If your program breaks, you can use the riscvmc_tester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
 
-# system calls table
+# System Calls Table
 | number | function | args | return |
 |--------|----------|------|--------|
 | 63     | read     | fd, ptr, len | number of bytes read |
@@ -71,7 +71,7 @@ If your program breaks, you can use the riscvmc_tester, where you can import a c
 | 514    | run_if | ptr, len | the result of the if statement, 0 or 1 |
 | 515    | place_block | x, y, z, block_type | - |
 
-# block types
+# Block Types
 | id | name |
 |----|------|
 | 0  | air  |
@@ -79,7 +79,7 @@ If your program breaks, you can use the riscvmc_tester, where you can import a c
 | 2  | dirt |
 | 3  | birch_wood |
 
-## explanation
+## Explanation
 - read: read the buffer from the file descriptor (only support 0, which is stdin) to the memory pointer, return the number of bytes read.
 - write: write the buffer from the memory pointer to the file descriptor (only support 1, which is stdout), return the number of bytes written.
 - exit: exit the emulator with the error code.
