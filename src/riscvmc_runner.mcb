@@ -1,7 +1,3 @@
-function onload minecraft:load {
-    scoreboard objectives add riscvmctest dummy
-}
-
 function _tick {
     execute if score #running riscvmc matches 1 run {
         function riscvmc:step
