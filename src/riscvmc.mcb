@@ -1,7 +1,7 @@
 import ./num_to_binary_array.js
 import ./argument_parser.js
-import ./bitopst.mcbt
-import ./memt.mcbt
+import ./bitops_t.mcbt
+import ./riscvmc_memory_t.mcbt
 
 function onload minecraft:load {
     scoreboard objectives add riscvmc dummy
@@ -56,8 +56,8 @@ function reset {
     # reset pc to 0x0
     # remove all registers and memory
     data modify storage riscvmc:memory pc set value <% from_num(0x0, 32) %>
-    function mem:remove_reg
-    function mem:remove_memory
+    function riscvmc_memory:remove_reg
+    function riscvmc_memory:remove_memory
 
     # remove pregenerated decode_map
     data remove storage riscvmc:decode_map i
@@ -585,8 +585,8 @@ function execute_inst {
 
                     block {
                         execute if score #i riscvmc <= #num riscvmc run {
-                            template get riscvmc:temp@ecall.buf ascii:tmp@digits
-                            function ascii:process_digits
+                            template get riscvmc:temp@ecall.buf riscvmc_ascii_buffer:temp@digits
+                            function riscvmc_ascii_buffer:process_digits
 
                             template add_1 riscvmc:temp@ecall.buf
 
@@ -626,7 +626,7 @@ function execute_inst {
                 }
 
                 # flush output buffer
-                function ascii:flush_buffer
+                function riscvmc_ascii_buffer:flush_buffer
 
                 scoreboard players set #running riscvmc 0
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_run_command"}} run {
@@ -640,12 +640,12 @@ function execute_inst {
 
                 scoreboard players set #i riscvmc 1
 
-                function ascii:clear_inst_buffer
+                function riscvmc_ascii_buffer:clear_inst_buffer
 
                 block {
                     execute if score #i riscvmc <= #num riscvmc run {
-                        template get riscvmc:temp@ecall.buf ascii:tmp@digits
-                        function ascii:process_digits_inst
+                        template get riscvmc:temp@ecall.buf riscvmc_ascii_buffer:temp@digits
+                        function riscvmc_ascii_buffer:process_digits_inst
 
                         template add_1 riscvmc:temp@ecall.buf
 
@@ -654,11 +654,11 @@ function execute_inst {
                     }
                 }
 
-                block { with storage ascii:tmp
+                block { with storage riscvmc_ascii_buffer:temp
                     $$(inst_buffer)
                 }
 
-                function ascii:clear_inst_buffer
+                function riscvmc_ascii_buffer:clear_inst_buffer
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_run_if"}} run {
                 # a0
                 data modify storage riscvmc:temp ecall.buf set from storage riscvmc:memory reg.01010
@@ -670,12 +670,12 @@ function execute_inst {
 
                 scoreboard players set #i riscvmc 1
 
-                function ascii:clear_inst_buffer
+                function riscvmc_ascii_buffer:clear_inst_buffer
 
                 block {
                     execute if score #i riscvmc <= #num riscvmc run {
-                        template get riscvmc:temp@ecall.buf ascii:tmp@digits
-                        function ascii:process_digits_inst
+                        template get riscvmc:temp@ecall.buf riscvmc_ascii_buffer:temp@digits
+                        function riscvmc_ascii_buffer:process_digits_inst
 
                         template add_1 riscvmc:temp@ecall.buf
 
@@ -686,7 +686,7 @@ function execute_inst {
 
                 scoreboard players set #syscall_if_flag riscvmc 0
 
-                block { with storage ascii:tmp
+                block { with storage riscvmc_ascii_buffer:temp
                     $execute if data storage riscvmc:if $(inst_buffer) run scoreboard players set #syscall_if_flag riscvmc 1
                 }
 
@@ -696,7 +696,7 @@ function execute_inst {
                     data modify storage riscvmc:memory reg.01010 set value <% from_num(0, 32) %>
                 }
 
-                function ascii:clear_inst_buffer
+                function riscvmc_ascii_buffer:clear_inst_buffer
             } else execute if data storage riscvmc:temp {ecall: {type: "SYS_place_block"}} run {
                 # a0
                 data modify storage riscvmc:temp ecall.xa set from storage riscvmc:memory reg.01010
@@ -750,9 +750,9 @@ function execute_inst {
 
 function step {
     execute if score #read_ecall riscvmc matches 1 run {
-        function ascii:is_input_buffer_empty
+        function riscvmc_ascii_buffer:is_input_buffer_empty
 
-        execute if data storage ascii:tmp {digits: 1} run {
+        execute if data storage riscvmc_ascii_buffer:temp {digits: 1} run {
             # if empty, block until input
             # not empty:
             execute if data storage riscvmc:temp {temp: {a0_str: "<% from_num_to_binary_str(0, 32) %>"}} run {
@@ -760,10 +760,10 @@ function step {
 
                 block {
                     execute if score #i riscvmc <= #num riscvmc run {
-                        function ascii:get_digits
+                        function riscvmc_ascii_buffer:get_digits
 
-                        execute if data storage ascii:tmp digits run {
-                            template put riscvmc:temp@ecall.buf ascii:tmp@digits
+                        execute if data storage riscvmc_ascii_buffer:temp digits run {
+                            template put riscvmc:temp@ecall.buf riscvmc_ascii_buffer:temp@digits
 
                             template add_1 riscvmc:temp@ecall.buf
 

@@ -3,7 +3,7 @@
 # lower bits at right
 
 # the args should be the storage path of the array, connecting the namespace and path with "@", for example:
-# yournamespace:tmp a => "yournamespace:tmp@a"
+# yournamespace:temp a => "yournamespace:temp@a"
 
 # !!!
 # please note that all the binary variables here are 32 bit length.
@@ -44,7 +44,7 @@ template get_array_length {
 # MODIFY #l
 template left_pad_32 {
     with c_digits:word {
-        template get_array_length <% c_digits %> bitops:tmp@left_pad_32.length
+        template get_array_length <% c_digits %> bitops:temp@left_pad_32.length
 
         block {
             execute if score #l bitops matches ..31 run {
@@ -66,13 +66,13 @@ template left_pad_32 {
 # MODIFY #l
 template sign_extend_32 {
     with c_digits:word {
-        template get_array_length <% c_digits %> bitops:tmp@sign_extend_32.length
+        template get_array_length <% c_digits %> bitops:temp@sign_extend_32.length
 
-        data modify storage bitops:tmp sign_extend_32.sign set from storage <% c_digits.replace("@", " ") %>[0]
+        data modify storage bitops:temp sign_extend_32.sign set from storage <% c_digits.replace("@", " ") %>[0]
 
         block {
             execute if score #l bitops matches ..31 run {
-                data modify storage <% c_digits.replace("@", " ") %> prepend from storage bitops:tmp sign_extend_32.sign
+                data modify storage <% c_digits.replace("@", " ") %> prepend from storage bitops:temp sign_extend_32.sign
                 scoreboard players operation #l bitops += #1 bitops
                 function ^1
             }
@@ -91,10 +91,10 @@ template sign_extend_32 {
 # MODIFY #l #la #lb #i #a_val #b_val
 template equal_not_32 {
     with c_digits:word d_digits:word {
-        template get_array_length <% c_digits %> bitops:tmp@equal_not_32.c_length
+        template get_array_length <% c_digits %> bitops:temp@equal_not_32.c_length
         scoreboard players operation #la bitops = #l bitops
 
-        template get_array_length <% d_digits %> bitops:tmp@equal_not_32.d_length
+        template get_array_length <% d_digits %> bitops:temp@equal_not_32.d_length
         scoreboard players operation #lb bitops = #l bitops
 
         scoreboard players set #flag bitops 1
@@ -102,8 +102,8 @@ template equal_not_32 {
         execute if score #la bitops = #lb bitops run {
             scoreboard players set #i bitops 0
             block {
-                execute store result storage bitops:tmp equal_not_32.i int 1 run scoreboard players get #i bitops
-                execute if score #i bitops < #la bitops run { with storage bitops:tmp equal_not_32
+                execute store result storage bitops:temp equal_not_32.i int 1 run scoreboard players get #i bitops
+                execute if score #i bitops < #la bitops run { with storage bitops:temp equal_not_32
                     $execute store result score #a_val bitops run data get storage <% c_digits.replace("@", " ") %>[$(i)]
                     $execute store result score #b_val bitops run data get storage <% d_digits.replace("@", " ") %>[$(i)]
 
@@ -193,15 +193,15 @@ template add_1 {
         scoreboard players set #i bitops 31
 
         block {
-            execute store result storage bitops:tmp add_1.i int 1 run scoreboard players get #i bitops
-            execute if score #i bitops matches 0.. run { with storage bitops:tmp add_1
-                $data modify storage bitops:tmp add_1.flag set from storage <% a_digits.replace("@", " ") %>[$(i)]
-                execute if data storage bitops:tmp {add_1: {flag: 1b}} run { with storage bitops:tmp add_1
+            execute store result storage bitops:temp add_1.i int 1 run scoreboard players get #i bitops
+            execute if score #i bitops matches 0.. run { with storage bitops:temp add_1
+                $data modify storage bitops:temp add_1.flag set from storage <% a_digits.replace("@", " ") %>[$(i)]
+                execute if data storage bitops:temp {add_1: {flag: 1b}} run { with storage bitops:temp add_1
                     $data modify storage <% a_digits.replace("@", " ") %>[$(i)] set value 0b
                     scoreboard players operation #i bitops += #n1 bitops
                     function ^2
                 }
-                execute if data storage bitops:tmp {add_1: {flag: 0b}} run { with storage bitops:tmp add_1
+                execute if data storage bitops:temp {add_1: {flag: 0b}} run { with storage bitops:temp add_1
                     $data modify storage <% a_digits.replace("@", " ") %>[$(i)] set value 1b
                 }
             }
@@ -309,8 +309,8 @@ template cmpu {
         scoreboard players set #exit_flag bitops 0
 
         block {
-            execute store result storage bitops:tmp cmpu.i int 1 run scoreboard players get #i bitops
-            execute if score #i bitops matches ..31 run { with storage bitops:tmp cmpu
+            execute store result storage bitops:temp cmpu.i int 1 run scoreboard players get #i bitops
+            execute if score #i bitops matches ..31 run { with storage bitops:temp cmpu
                 $execute store result score #a_val bitops run data get storage <% a_digits.replace("@", " ") %>[$(i)]
                 $execute store result score #b_val bitops run data get storage <% b_digits.replace("@", " ") %>[$(i)]
 
@@ -380,11 +380,11 @@ template shift_left {
 
         REPEAT (0, 31) as i {
             scoreboard players set #i bitops <%i%>
-            execute store result storage bitops:tmp shift_left.i int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp shift_left.i int 1 run scoreboard players get #i bitops
             scoreboard players operation #i bitops -= #shift_bits bitops
-            execute store result storage bitops:tmp shift_left.j int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp shift_left.j int 1 run scoreboard players get #i bitops
 
-            execute if score #i bitops matches 0.. run { with storage bitops:tmp shift_left
+            execute if score #i bitops matches 0.. run { with storage bitops:temp shift_left
                 $data modify storage <% digits.replace("@", " ") %>[$(j)] set from storage <% a_digits.replace("@", " ") %>[$(i)]
             }
         }
@@ -406,11 +406,11 @@ template logical_shift_right {
 
         REPEAT (0, 31) as i {
             scoreboard players set #i bitops <%i%>
-            execute store result storage bitops:tmp logical_shift_right.i int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp logical_shift_right.i int 1 run scoreboard players get #i bitops
             scoreboard players operation #i bitops += #shift_bits bitops
-            execute store result storage bitops:tmp logical_shift_right.j int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp logical_shift_right.j int 1 run scoreboard players get #i bitops
 
-            execute if score #i bitops matches ..31 run { with storage bitops:tmp logical_shift_right
+            execute if score #i bitops matches ..31 run { with storage bitops:temp logical_shift_right
                 $data modify storage <% digits.replace("@", " ") %>[$(j)] set from storage <% a_digits.replace("@", " ") %>[$(i)]
             }
         }
@@ -432,18 +432,18 @@ template arithmetic_shift_right {
 
         REPEAT (0, 31) as i {
             scoreboard players set #i bitops <%i%>
-            execute store result storage bitops:tmp arithmetic_shift_right.i int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp arithmetic_shift_right.i int 1 run scoreboard players get #i bitops
             scoreboard players operation #i bitops += #shift_bits bitops
-            execute store result storage bitops:tmp arithmetic_shift_right.j int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp arithmetic_shift_right.j int 1 run scoreboard players get #i bitops
 
-            execute if score #i bitops matches ..31 run { with storage bitops:tmp arithmetic_shift_right
+            execute if score #i bitops matches ..31 run { with storage bitops:temp arithmetic_shift_right
                 $data modify storage <% digits.replace("@", " ") %>[$(j)] set from storage <% a_digits.replace("@", " ") %>[$(i)]
             }
 
             scoreboard players operation #i bitops -= #32 bitops
-            execute store result storage bitops:tmp arithmetic_shift_right.i int 1 run scoreboard players get #i bitops
+            execute store result storage bitops:temp arithmetic_shift_right.i int 1 run scoreboard players get #i bitops
 
-            execute if score #i bitops matches 0.. run { with storage bitops:tmp arithmetic_shift_right
+            execute if score #i bitops matches 0.. run { with storage bitops:temp arithmetic_shift_right
                 $data modify storage <% digits.replace("@", " ") %>[$(i)] set from storage <% a_digits.replace("@", " ") %>[0]
             }
         }
@@ -534,10 +534,10 @@ template xor {
 template to_str {
     with len:int a_digits:word str:word {
         REPEAT (0, len - 1) as i {
-            data modify storage bitops:tmp to_str.t.<%i%> set from storage <% a_digits.replace("@", " ") %>[<%i%>]
+            data modify storage bitops:temp to_str.t.<%i%> set from storage <% a_digits.replace("@", " ") %>[<%i%>]
         }
 
-        block { with storage bitops:tmp to_str.t
+        block { with storage bitops:temp to_str.t
             $data modify storage <% str.replace("@", " ") %> set value "<% generate_to_str_format(len) %>"
             # "
             # the prev line is to eliminate effect of a bug of syntax highlighting in mcbt
@@ -557,12 +557,12 @@ template to_hex_str {
         data modify storage <% str.replace("@", " ") %> set value ""
 
         REPEAT (0, 7) as i {
-            data modify storage bitops:tmp to_hex_str.i1 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 %>]
-            data modify storage bitops:tmp to_hex_str.i2 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 1 %>]
-            data modify storage bitops:tmp to_hex_str.i3 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 2 %>]
-            data modify storage bitops:tmp to_hex_str.i4 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 3 %>]
+            data modify storage bitops:temp to_hex_str.i1 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 %>]
+            data modify storage bitops:temp to_hex_str.i2 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 1 %>]
+            data modify storage bitops:temp to_hex_str.i3 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 2 %>]
+            data modify storage bitops:temp to_hex_str.i4 set from storage <% a_digits.replace("@", " ") %>[<% i * 4 + 3 %>]
             REPEAT (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']) as i {
-                execute if data storage bitops:tmp {to_hex_str: {i1: <% from_num_to_array(Number("0x" + i), 4)[0] %>b, i2: <% from_num_to_array(Number("0x" + i), 4)[1] %>b, i3: <% from_num_to_array(Number("0x" + i), 4)[2] %>b, i4: <% from_num_to_array(Number("0x" + i), 4)[3] %>b}} run { with storage <% as_storage(str) %>
+                execute if data storage bitops:temp {to_hex_str: {i1: <% from_num_to_array(Number("0x" + i), 4)[0] %>b, i2: <% from_num_to_array(Number("0x" + i), 4)[1] %>b, i3: <% from_num_to_array(Number("0x" + i), 4)[2] %>b, i4: <% from_num_to_array(Number("0x" + i), 4)[3] %>b}} run { with storage <% as_storage(str) %>
                     $data modify storage <% str.replace("@", " ") %> set value "$(<% as_name(str) %>)<%i%>"
                     # "
                     # the prev line is to eliminate effect of a bug of syntax highlighting in mcbt
@@ -614,24 +614,24 @@ template to_num {
         scoreboard players set #num bitops 0
         scoreboard players set #n_flag bitops 1
 
-        data modify storage bitops:tmp to_num.sign set from storage <% a_digits.replace("@", " ") %>[0]
-        data modify storage bitops:tmp to_num.temp set from storage <% a_digits.replace("@", " ") %>
+        data modify storage bitops:temp to_num.sign set from storage <% a_digits.replace("@", " ") %>[0]
+        data modify storage bitops:temp to_num.temp set from storage <% a_digits.replace("@", " ") %>
 
-        execute if data storage bitops:tmp {to_num: {sign: true}} run {
+        execute if data storage bitops:temp {to_num: {sign: true}} run {
             scoreboard players set #n_flag bitops -1
 
-            template bitwise_not bitops:tmp@to_num.temp
-            template add_1 bitops:tmp@to_num.temp
+            template bitwise_not bitops:temp@to_num.temp
+            template add_1 bitops:temp@to_num.temp
         }
 
-        data modify storage bitops:tmp to_num.sign set from storage bitops:tmp to_num.temp[0]
-        execute if data storage bitops:tmp {to_num: {sign: true}} run {
+        data modify storage bitops:temp to_num.sign set from storage bitops:temp to_num.temp[0]
+        execute if data storage bitops:temp {to_num: {sign: true}} run {
             # only happen when the number is 0x80000000
             scoreboard players set #num bitops -2147483648
         }
-        execute if data storage bitops:tmp {to_num: {sign: false}} run {
+        execute if data storage bitops:temp {to_num: {sign: false}} run {
             REPEAT (0, 30) as i {
-                execute store result score #b<%i%> bitops run data get storage bitops:tmp to_num.temp[<%31 - i%>]
+                execute store result score #b<%i%> bitops run data get storage bitops:temp to_num.temp[<%31 - i%>]
                 execute if score #b<%i%> bitops matches 1 run scoreboard players operation #num bitops += #<% 2 ** i %> bitops
             }
 

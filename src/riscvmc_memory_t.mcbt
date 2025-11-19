@@ -1,9 +1,9 @@
 import ./num_to_binary_array.js
 import ./argument_parser.js
-import ./bitopst.mcbt
+import ./bitops_t.mcbt
 
 # the args should be the storage path of the array, connecting the namespace and path with "@", for example:
-# yournamespace:tmp a => "yournamespace:tmp@a"
+# yournamespace:temp a => "yournamespace:temp@a"
 
 # args:
 # addr: [...] (32 bit length array)
@@ -12,10 +12,10 @@ import ./bitopst.mcbt
 # data: [0b,1b,1b,0b,1b,1b,1b,1b] (8 bit length array)
 template get {
     with addr:word data:word {
-        template to_str 32 <% addr %> mem:tmp@str
+        template to_str 32 <% addr %> riscvmc_memory:temp@str
         data modify storage <% data.replace("@", " ") %> set value <% from_num(0, 8) %>
 
-        block { with storage mem:tmp
+        block { with storage riscvmc_memory:temp
             $data modify storage <% data.replace("@", " ") %> set from storage riscvmc:memory m.$(str)
         }
     }
@@ -30,9 +30,9 @@ template get {
 # -
 template put {
     with addr:word data:word {
-        template to_str 32 <% addr %> mem:tmp@str
+        template to_str 32 <% addr %> riscvmc_memory:temp@str
 
-        block { with storage mem:tmp
+        block { with storage riscvmc_memory:temp
             $data modify storage riscvmc:memory m.$(str) set from storage <% data.replace("@", " ") %>
         }
     }
@@ -46,10 +46,10 @@ template put {
 # data: [...] (32 bit length array)
 template get_reg {
     with id:word data:word {
-        template to_str 5 <% id %> mem:tmp@str
+        template to_str 5 <% id %> riscvmc_memory:temp@str
         data modify storage <% data.replace("@", " ") %> set value <% from_num(0, 32) %>
 
-        block { with storage mem:tmp
+        block { with storage riscvmc_memory:temp
             $data modify storage <% data.replace("@", " ") %> set from storage riscvmc:memory reg.$(str)
         }
     }
@@ -64,9 +64,9 @@ template get_reg {
 # -
 template put_reg {
     with id:word data:word {
-        template to_str 5 <% id %> mem:tmp@str
+        template to_str 5 <% id %> riscvmc_memory:temp@str
 
-        execute unless data storage mem:tmp {str: "00000"} run { with storage mem:tmp
+        execute unless data storage riscvmc_memory:temp {str: "00000"} run { with storage riscvmc_memory:temp
             $data modify storage riscvmc:memory reg.$(str) set from storage <% data.replace("@", " ") %>
         }
     }

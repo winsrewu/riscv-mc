@@ -1,12 +1,12 @@
 import ./num_to_binary_array.js
 import ./argument_parser.js
-import ./bitopst.mcbt
+import ./bitops_t.mcbt
 
 
 function remove_memory {
-    data remove storage riscvmc:memory m
+	data remove storage riscvmc:memory m
 }
 
 function remove_reg {
-    data remove storage riscvmc:memory reg
+	data remove storage riscvmc:memory reg
 }

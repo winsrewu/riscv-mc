@@ -37,7 +37,7 @@
 /function riscvmc:set_running
 # 将运行标志设置为 true
 ```
-3. 通过多次执行 `/function riscvmcrunner:tick50` 来运行程序。  
+3. 通过多次执行 `/function riscvmc_runner:tick50` 来运行程序。  
 每次执行将模拟 50 条指令。请注意，Minecraft 每 tick 有命令数限制，因此不宜一次运行过多。
 4. 如需停止程序，执行 `/function riscvmc:stop_running`。
 
@@ -46,7 +46,7 @@
 - 输出内容会被缓冲，直到遇到换行符 `\n` 才会显示。
 - 你可以使用 scanf。读取操作是阻塞的。你可以像这样设置 ascii tmp：
 ```
-/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!\n"
+/data modify storage riscvmc_ascii_buffer:temp input_buffer set value "Hello_from_input_buffer!\n"
 ```
 - 程序入口点在 0x0, 但是你可以更改
 - 我在python模拟器内提供了 systemcalls.c
@@ -56,7 +56,7 @@
 - 内存加载（app.mcfunction）和解码表加载（decode_map.mcfunction）完成后会打印一条消息。
 
 # 故障排查
-如果程序运行出错，你可以使用 `riscvmctester` 模块：导入正确的程序计数器（PC）序列，模拟器会在运行时自动比对。  
+如果程序运行出错，你可以使用 `riscvmc_tester` 模块：导入正确的程序计数器（PC）序列，模拟器会在运行时自动比对。  
 此外，你也可以使用 Python 版模拟器或 Spike 进行调试。上述 Python 模拟器支持打印每步的寄存器状态、监控内存访问等调试功能，便于定位问题。
 
 # 系统调用表

@@ -1,0 +1,45 @@
+import ./num_to_binary_array.js
+
+function onload minecraft:load {
+    scoreboard objectives add riscvmctest dummy
+}
+
+function reset {
+    scoreboard players set #count riscvmctest 0
+}
+
+function tick {
+    execute if score #running riscvmc matches 1 run {
+        function riscvmc:debug_step
+        scoreboard players add #count riscvmctest 1
+        execute store result storage riscvmctest:temp count int 1 run scoreboard players get #count riscvmctest
+        
+        block { with storage riscvmctest:temp
+            $data modify storage riscvmctest:temp target_pc set from storage riscvmc:pc_log pc[$(count)]
+            data modify storage riscvmctest:temp current_pc set from storage riscvmc:debug pc
+            $data modify storage riscvmctest:temp target_reg set from storage riscvmc:pc_log regs[$(count)]
+            data modify storage riscvmctest:temp current_reg set from storage riscvmc:debug reg
+
+            block { with storage riscvmctest:temp
+                $say $(count) - cur: $(current_pc) tar: $(target_pc)
+                $execute unless data storage riscvmctest:temp {current_pc: "$(target_pc)"} run {
+                    function riscvmc:stop_running
+                }
+                $execute unless data storage riscvmctest:temp {current_reg: $(target_reg)} run { with storage riscvmctest:temp
+                    function riscvmc:stop_running
+
+                    $data modify storage riscvmctest:temp target_reg_dict set value $(target_reg)
+
+                    REPEAT (0, 31) as i {
+                        data modify storage riscvmctest:temp target_reg_item set from storage riscvmctest:temp target_reg_dict.<% from_num_to_binary_str(i, 5) %>
+                        block { with storage riscvmctest:temp
+                            $execute unless data storage riscvmctest:temp {current_reg: {<% from_num_to_binary_str(i, 5) %>: "$(target_reg_item)"}} run {
+                                say difference in register <% i %> (<% from_num_to_binary_str(i, 5) %>)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -39,7 +39,7 @@ you need to use `dump_to_mcf.py` instead of `mem_to_mcf.py`.
 /function riscvmc:set_running
 # set running flag to true
 ```
-3. You can now run the program by doing ```function riscvmcrunner:tick50``` multiple times.
+3. You can now run the program by doing ```function riscvmc_runner:tick50``` multiple times.
 This will let the emulator run 50 instructions at one tick. Please notice that there's a limit in Minecraft of commands per tick.
 4. If you want to stop the program, do ```function riscvmc:stop_running```.
 
@@ -49,7 +49,7 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 - The output is buffered until a \n is encountered.
 - You can use scanf. The read action is blocking. You can set the ascii tmp like this:
 ```
-/data modify storage ascii:tmp input_buffer set value "Hello_from_input_buffer!\n"
+/data modify storage riscvmc_ascii_buffer:temp input_buffer set value "Hello_from_input_buffer!\n"
 ```
 - The entry point of the program is hardcoded to 0x0, but you can change it.
 - I have provided a systemcalls.c in the python emulator.
@@ -59,7 +59,7 @@ This will let the emulator run 50 instructions at one tick. Please notice that t
 - memory load (app.mcfunction) and decode_map load (decode_map.mcfunction) will print a message when they are finished.
 
 # Troubleshooting
-If your program breaks, you can use the riscvmctester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
+If your program breaks, you can use the riscvmc_tester, where you can import a correct list of program counter, and the emulator will check it for you when running. And you can also use the emulator based on python or spike to debug your program. The python emulator mentioned above do have some functionalities to help you debug your program, like printing the registers at each step, monitering memory access, etc.
 
 # system calls table
 | number | function | args | return |

@@ -1,5 +1,5 @@
-// "sth:tmp@test.a.b" => "sth:tmp test.a"
-// "sth:tmp@test" => "sth:tmp"
+// "sth:temp@test.a.b" => "sth:temp test.a"
+// "sth:temp@test" => "sth:temp"
 function as_storage(str) {
     let parts = str.split("@");
 
@@ -16,8 +16,8 @@ function as_storage(str) {
     return res.slice(0, -1);
 }
 
-// "sth:tmp@test.a.b" => "b"
-// "sth:tmp@test" => "test"
+// "sth:temp@test.a.b" => "b"
+// "sth:temp@test" => "test"
 function as_name(str) {
     let parts = str.split("@");
 

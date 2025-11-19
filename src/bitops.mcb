@@ -1,14 +1,14 @@
 import ./num_to_binary_array.js
 import ./argument_parser.js
-import ./bitopst.mcbt
+import ./bitops_t.mcbt
 
-# see bitopst.mcbt for the implementation of bitops
+# see bitops_t.mcbt for the implementation of bitops
 
 function onload minecraft:load {
-    scoreboard objectives add bitops dummy
+	scoreboard objectives add bitops dummy
 
-    REPEAT (0, 30) as i {
-        scoreboard players set #<%2 ** i%> bitops <%2 ** i%>
-    }
-    scoreboard players set #n1 bitops -1
+	REPEAT (0, 30) as i {
+		scoreboard players set #<%2 ** i%> bitops <%2 ** i%>
+	}
+	scoreboard players set #n1 bitops -1
 }
