@@ -1,0 +1,198 @@
+import ./ascii_to_binary.js
+import ./num_to_binary_array.js
+
+function onload minecraft:load {
+	scoreboard objectives add riscvmc_terminal_keyboard_trigger trigger
+
+	data modify storage riscvmc_terminal:temp input_buffer set value ""
+	data modify storage riscvmc_terminal:temp terminal_content set value ""
+	data modify storage riscvmc_terminal:temp terminal_output set value ""
+}
+
+function ontick minecraft:tick {
+	scoreboard players enable @a riscvmc_terminal_keyboard_trigger
+
+	# handle keyboard input
+	execute as @a run {
+		execute if score @s riscvmc_terminal_keyboard_trigger matches 1.. run {
+			REPEAT (1, 257) as i {
+				IF i == 8 {
+					execute if score @s riscvmc_terminal_keyboard_trigger matches <%i%> run {
+						function *backspace
+					}
+				} ELSE IF i == 256 {
+                    execute if score @s riscvmc_terminal_keyboard_trigger matches <%i%> run {
+						function *print_keyboard_shifted
+					}
+				} ELSE IF i == 257 {
+                    execute if score @s riscvmc_terminal_keyboard_trigger matches <%i%> run {
+						function *print_keyboard
+					}
+				} ELSE IF is_printable(i) {
+					execute if score @s riscvmc_terminal_keyboard_trigger matches <%i%> run {
+						function *on_key_down {key: "<% get_should_print(i) %>"}
+					}
+				}
+			}
+		}
+
+		scoreboard players set @s riscvmc_terminal_keyboard_trigger 0
+	}
+
+	# handle terminal content
+
+	# append the riscvmc output buffer to terminal's buffer and clear it
+	data modify storage riscvmc_terminal:temp temp_buffer set from storage riscvmc_ascii_buffer:temp buffer
+	block { with storage riscvmc_terminal:temp
+		$data modify storage riscvmc_terminal:temp terminal_content set value "$(terminal_content)$(temp_buffer)"
+	}
+	data modify storage riscvmc_ascii_buffer:temp buffer set value ""
+
+	# append the input
+	block { with storage riscvmc_terminal:temp
+		$data modify storage riscvmc_terminal:temp terminal_output set value "$(terminal_content)\n> $(input_buffer)"
+	}
+
+	# copy to all terminals
+	execute as @e[tag=riscvmc_terminal,type=minecraft:text_display] run {
+		data modify entity @s text set from storage riscvmc_terminal:temp terminal_output
+	}
+}
+
+function print_keyboard {
+	tellraw @s [ \
+        {text:"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"}, \
+		{text:"`", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 96"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"1", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 49"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"2", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 50"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"3", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 51"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"4", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 52"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"5", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 53"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"6", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 54"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"7", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 55"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"8", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 56"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"9", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 57"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"0", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 48"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"-", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 45"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"=", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 61"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"⌫", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 8"}}, {text:"\n   ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"q", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 113"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"w", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 119"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"e", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 101"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"r", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 114"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"t", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 116"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"y", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 121"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"u", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 117"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"i", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 105"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"o", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 111"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"p", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 112"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"[", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 91"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"]", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 93"}}, {text:"\n    ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"a", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 97"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"s", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 115"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"d", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 100"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"f", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 102"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"g", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 103"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"h", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 104"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"j", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 106"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"k", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 107"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"l", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 108"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:";", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 59"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"'", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 39"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Enter", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 10"}}, {text:"\n   ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"⇧", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 256"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"z", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 122"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"x", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 120"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"c", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 99"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"v", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 118"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"b", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 98"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"n", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 110"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"m", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 109"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:",", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 44"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:".", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 46"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"/", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 47"}}, {text:"\n", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Space", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 32"}} \
+	]
+}
+
+function print_keyboard_shifted {
+	tellraw @s [ \
+        {text:"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"}, \
+		{text:"~", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 126"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"!", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 33"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"@", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 64"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"#", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 35"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"$", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 36"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"%", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 37"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"^", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 94"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"&", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 38"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"*", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 42"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"(", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 40"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:")", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 41"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"_", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 95"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"+", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 43"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"⌫", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 8"}}, {text:"\n   ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Q", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 81"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"W", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 87"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"E", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 69"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"R", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 82"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"T", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 84"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Y", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 89"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"U", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 85"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"I", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 73"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"O", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 79"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"P", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 80"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"{", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 123"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"}", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 125"}}, {text:"\n    ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"A", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 65"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"S", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 83"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"D", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 68"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"F", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 70"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"G", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 71"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"H", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 72"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"J", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 74"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"K", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 75"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"L", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 76"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:":", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 58"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"\"", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 34"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Enter", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 10"}}, {text:"\n   ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"⇧", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 257"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Z", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 90"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"X", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 88"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"C", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 67"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"V", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 86"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"B", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 66"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"N", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 78"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"M", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 77"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"<", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 60"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:">", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 62"}}, {text:" ", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"?", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 63"}}, {text:"\n", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 0"}}, \
+		{text:"Space", click_event:{action:"run_command",command:"trigger riscvmc_terminal_keyboard_trigger set 32"}} \
+	]
+}
+
+# args {key: "<char>"}
+function on_key_down {
+	$data modify storage riscvmc_terminal:temp char set value "$(key)"
+
+	execute if data storage riscvmc_terminal:temp {char:"\n"} run { with storage riscvmc_terminal:temp
+		# push to riscvmc_ascii_buffer
+		data modify storage riscvmc_ascii_buffer:temp temp_buffer set from storage riscvmc_terminal:temp input_buffer
+
+		block { with storage riscvmc_terminal:temp
+			# auto append \n
+			$data modify storage riscvmc_ascii_buffer:temp input_buffer set value "$(input_buffer)$(temp_buffer)\n"
+		}
+
+		# push to terminal_content
+		$data modify storage riscvmc_terminal:temp terminal_content set value "$(terminal_content)$(input_buffer)\n"
+
+		data modify storage riscvmc_terminal:temp input_buffer set value ""
+	} else run { with storage riscvmc_terminal:temp
+		$data modify storage riscvmc_terminal:temp input_buffer set value "$(input_buffer)$(char)"
+	}
+}
+
+function backspace {
+	data modify storage riscvmc_terminal:temp input_buffer set string storage riscvmc_terminal:temp input_buffer 0 -1
+}

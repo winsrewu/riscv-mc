@@ -3,6 +3,8 @@ import ./num_to_binary_array.js
 import ./argument_parser.js
 import ./bitops_t.mcbt
 
+# storage riscvmc_ascii_buffer:temp temp_buffer is used.
+
 # control characters are all ignored, except for \n and \t
 # \n will flush the buffer and call 'say' command once
 # \t will be replaced by 4 spaces
