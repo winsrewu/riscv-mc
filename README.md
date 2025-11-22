@@ -15,7 +15,7 @@ Similar repo https://github.com/SuperTails/riscvcraft but with rv32ima. This aut
 ### Compiling the datapack
 1. Install mc-build, please follow the instructions on https://mcbuild.dev.
 2. Clone this repository directly into your Minecraft world's datapacks folder.
-3. Run ```mcb build``` in the repository directory
+3. Run ```mcb build``` in the repository directory.
 4. Now the repository directory becomes a datapack. You can now load it into your Minecraft world.
 
 ### Compiling the program
@@ -27,21 +27,26 @@ you need to use `dump_to_mcf.py` instead of `mem_to_mcf.py`.
 
 
 ### Running the program
-1. Load the datapack and run the loader:app.mcfunction.
+1. Load the datapack. Please notice that there's a limit in Minecraft of commands per tick. You can set it via ```/gamerule maxCommandChainLength <>```.
 2. If you had runned before, do
 ```
 /function riscvmc:reset
 # reset memory, pc, regs, if you are loading from a dump file, don't do this, it will be done in app.mcfunction
+```
+3. Load the program by doing
+```
 /function <your app.mcfunction>
-# load memory again, in case of it being modified by the program
+# load memory. It will say when it's finished, otherwise there may be an error or the command limit exceeded.
+
 /function <your decode_map>
-# optional, if you have generated a decode_map
+# optional, if you have generated a decode_map. It will say when it's finished, otherwise there may be an error or the command limit exceeded.
+
 /function riscvmc:set_running
 # set running flag to true
 ```
-3. You can now run the program by doing ```function riscvmc_runner:tick50``` multiple times.
+4. You can now run the program by doing ```function riscvmc_runner:tick50``` multiple times.
 This will let the emulator run 50 instructions at one tick. Please notice that there's a limit in Minecraft of commands per tick.
-4. If you want to stop the program, do ```function riscvmc:stop_running```.
+5. If you want to stop the program, do ```function riscvmc:stop_running```.
 
 
 # Good to know
