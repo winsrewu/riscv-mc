@@ -25,21 +25,26 @@
 3. 如果你想要从一个转储文件加载（参见 [Python 模拟器](https://github.com/winsrewu/pyriscv)），你需要使用 `dump_to_mcf.py` 而不是 `mem_to_mcf.py`。
 
 ### 运行程序
-1. 加载数据包后，运行你的 `loader:app.mcfunction` 来加载程序。
-2. 如果你之前运行过其他程序，请先执行以下命令重置状态：
+1. 加载数据包。请注意 Minecraft 对每 tick 可执行命令数量有限制，您可以通过 ```/gamerule maxCommandChainLength <>``` 进行设置。
+2. 若之前已运行过程序，请执行：
 ```
 /function riscvmc:reset
-# 重置内存、PC和寄存器，如果你是从转储文件加载，不要执行这一步，因为这一步会在 app.mcfunction 中完成
+# 重置内存、PC和寄存器。若要从转储文件加载，请勿执行此步骤，该操作将在 app.mcfunction 中完成
+```
+3. 通过以下命令加载程序：
+```
 /function <你的 app.mcfunction>
-# 重新加载内存，以防被程序修改
+# 加载内存。完成后会提示，否则可能是遇到错误或超出命令限制
+
 /function <你的 decode_map>
-# 可选的，如果你已经生成了 decode_map
+# 可选步骤，若已生成 decode_map。完成后会提示，否则可能是遇到错误或超出命令限制
+
 /function riscvmc:set_running
 # 将运行标志设置为 true
 ```
-3. 通过多次执行 `/function riscvmc_runner:tick50` 来运行程序。  
-每次执行将模拟 50 条指令。请注意，Minecraft 每 tick 有命令数限制，因此不宜一次运行过多。
-4. 如需停止程序，执行 `/function riscvmc:stop_running`。
+4. 此时可通过多次执行 ```function riscvmc_runner:tick50``` 来运行程序。
+每次执行将让模拟器在一个 tick 内运行 50 条指令。请注意 Minecraft 对每 tick 可执行命令数量有限制。
+5. 若需停止程序，请执行 ```function riscvmc:stop_running```。
 
 # 注意事项
 - Python 模拟器：https://github.com/winsrewu/pyriscv ，我认为它们行为一致。
@@ -83,6 +88,32 @@
 - exit: 以错误码退出模拟器。
 - run_command: 立即执行缓冲区中的命令，忽略所有控制字符。
 - run_if: 执行 /execute if data storage riscvmc:if $(buffer) run ...，如果测试通过返回 1，否则返回 0。
+
+# 子模块
+这些 mcb 文件是作为子模块引入的，这意味着如果您不需要它们，可以将其移除。
+- src/riscvmc_terminal.mcb - 带键盘的终端，可将内容放入输入缓冲区。
+- src/riscvmc_runner.mcb - 运行器。
+- src/riscvmc_tester.mcb - 测试器。
+
+## 推荐用法
+- 输出屏幕：
+```
+/summon minecraft:text_display ~ ~ ~ {alignment: "left", line_width: 400, Tags:["output"]}
+
+# 清除缓冲区
+/data modify storage riscvmc_ascii_buffer:temp buffer set value ""
+
+# 设置为重复执行命令
+/data modify entity @e[tag=output,limit=1,sort=nearest] text set from storage riscvmc_ascii_buffer:temp buffer
+```
+
+- 带键盘的终端屏幕（需要终端模块）：
+```
+/summon minecraft:text_display ~ ~ ~ {alignment: "left", line_width: 400, Tags:["riscvmc_terminal"]}
+
+# 打印键盘布局
+/function riscvmc_terminal:print_keyboard
+```
 
 # TODO
 懒得翻译了自己去看英文版本
