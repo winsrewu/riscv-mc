@@ -86,6 +86,32 @@ If your program breaks, you can use the riscvmc_tester, where you can import a c
 - run_command: run the command in the buffer immediately, ignoring all the control characters.
 - run_if: run /execute if data storage riscvmc:if $(buffer) run ..., if test passed, return 1, else return 0.
 
+# Submodules
+These mcb files are included as submodules, which means you can remove them if you don't need them.
+- src/riscvmc_terminal.mcb - A terminal with keyboard to put stuff into input buffer.
+- src/riscvmc_runner.mcb - Runner.
+- src/riscvmc_tester.mcb - Tester.
+
+## Recommended Usage
+- Output screen:
+```
+/summon minecraft:text_display ~ ~ ~ {alignment: "left", line_width: 400, Tags:["output"]}
+
+# clear the buffer
+/data modify storage riscvmc_ascii_buffer:temp buffer set value ""
+
+# set as repeating command
+/data modify entity @e[tag=output,limit=1,sort=nearest] text set from storage riscvmc_ascii_buffer:temp buffer
+```
+
+- Terminal screen with keyboard (requires terminal module):
+```
+/summon minecraft:text_display ~ ~ ~ {alignment: "left", line_width: 400, Tags:["riscvmc_terminal"]}
+
+# print keyboard
+/function riscvmc_terminal:print_keyboard
+```
+
 # TODO
 I need help :sob:
 - [ ] Optimizing
